@@ -97,6 +97,120 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 
+  // --- ÖDEV VERME DİYALOĞU (Öğretmenin ödev göndermesi için) ---
+  void _odevVerDialog(BuildContext context) {
+    final TextEditingController tarihStrController = TextEditingController(
+      text: "21 Temmuz 2026, Salı",
+    );
+    final TextEditingController kitapAdiController = TextEditingController();
+    final TextEditingController sayfaController = TextEditingController();
+    final TextEditingController aciklamaController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Sınıfa Ödev Ver"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tarihStrController,
+                decoration: const InputDecoration(
+                  labelText: "Tarih Formatı (Örn: 21-Temmuz-2026, Salı)",
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: kitapAdiController,
+                decoration: const InputDecoration(labelText: "Kitap Adı"),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: sayfaController,
+                decoration: const InputDecoration(
+                  labelText: "Sayfa Aralığı (Örn: 10-15)",
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: aciklamaController,
+                decoration: const InputDecoration(
+                  labelText: "Bu Kitap İçin Açıklama / Yönerge",
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("İptal"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              String secilenTarih = tarihStrController.text.trim();
+              String kitapAdi = kitapAdiController.text.trim();
+              String sayfaAraligi = sayfaController.text.trim();
+              String aciklama = aciklamaController.text.trim();
+
+              var studentsSnapshot = await FirebaseFirestore.instance
+                  .collection('students')
+                  .where('classId', isEqualTo: widget.classId)
+                  .get();
+
+              for (var studentDoc in studentsSnapshot.docs) {
+                var odevlerRef = studentDoc.reference.collection('odevler');
+
+                var existingOdev = await odevlerRef
+                    .where('tarihStr', isEqualTo: secilenTarih)
+                    .get();
+
+                if (existingOdev.docs.isNotEmpty) {
+                  var docId = existingOdev.docs.first.id;
+                  var mevcutVeri = existingOdev.docs.first.data();
+                  List mevcutKitaplar = List.from(mevcutVeri['kitaplar'] ?? []);
+
+                  // Yeni kitabı ve kendi özel açıklamasını listeye ekle
+                  mevcutKitaplar.add({
+                    'kitapAdi': kitapAdi,
+                    'sayfaAraligi': sayfaAraligi,
+                    'aciklama': aciklama,
+                  });
+
+                  await odevlerRef.doc(docId).update({
+                    'kitaplar': mevcutKitaplar,
+                  });
+                } else {
+                  await odevlerRef.add({
+                    'tarihStr': secilenTarih,
+                    'kitaplar': [
+                      {
+                        'kitapAdi': kitapAdi,
+                        'sayfaAraligi': sayfaAraligi,
+                        'aciklama': aciklama,
+                      },
+                    ],
+                    'durum': 'bekliyor',
+                  });
+                }
+              }
+
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Ödev kitaba özel açıklamasıyla eklendi."),
+                ),
+              );
+            },
+            child: const Text("Ödevi Gönder"),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Öğrencileri ve alt koleksiyondaki okunan kitapları çekip toplam sayfa hesaplayan fonksiyon
   Future<List<Map<String, dynamic>>> _getOgrencilerVeSayfalar() async {
     var studentsQuery = await FirebaseFirestore.instance
@@ -145,6 +259,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
       appBar: AppBar(
         title: Text("${widget.className} Öğrencileri"),
         actions: [
+          // 1. Ödev Verme Butonu (Yeni Eklenen)
+          IconButton(
+            icon: const Icon(Icons.assignment_add),
+            tooltip: "Sınıfa Ödev Ver",
+            onPressed: () => _odevVerDialog(context),
+          ),
           // Liderlik / Sıralama Butonu Eklendi
           IconButton(
             icon: Icon(_siralamayiAc ? Icons.star : Icons.sort_by_alpha),
