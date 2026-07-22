@@ -15,6 +15,10 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled:
+          false, // Telefonda yerel cache tutulmasını tamamen kapatır
+    );
   } catch (e) {
     debugPrint("Firebase başlatılamadı: $e");
   }

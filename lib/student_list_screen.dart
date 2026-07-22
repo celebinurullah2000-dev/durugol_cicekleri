@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_student_screen.dart';
 import 'student_detail_screen.dart';
+import 'TopluOdevScreen.dart';
+import 'TarihBazliOdevYoneticisiScreen.dart';
+import 'SinifIsTakipScreen.dart';
 
 class StudentListScreen extends StatefulWidget {
   final String classId;
@@ -97,7 +100,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 
-  // --- ÖDEV VERME DİYALOĞU (Öğretmenin ödev göndermesi için) ---
+  // --- ÖDEV VERME DİYALOĞU ---
   void _odevVerDialog(BuildContext context) {
     final TextEditingController tarihStrController = TextEditingController(
       text: "21 Temmuz 2026, Salı",
@@ -117,7 +120,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
               TextField(
                 controller: tarihStrController,
                 decoration: const InputDecoration(
-                  labelText: "Tarih Formatı (Örn: 21-Temmuz-2026, Salı)",
+                  labelText: "Tarih Formatı (Örn: 21 Temmuz 2026, Salı)",
                 ),
               ),
               const SizedBox(height: 10),
@@ -172,11 +175,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   var mevcutVeri = existingOdev.docs.first.data();
                   List mevcutKitaplar = List.from(mevcutVeri['kitaplar'] ?? []);
 
-                  // Yeni kitabı ve kendi özel açıklamasını listeye ekle
                   mevcutKitaplar.add({
                     'kitapAdi': kitapAdi,
                     'sayfaAraligi': sayfaAraligi,
                     'aciklama': aciklama,
+                    'durum': 'bekliyor',
                   });
 
                   await odevlerRef.doc(docId).update({
@@ -190,14 +193,16 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         'kitapAdi': kitapAdi,
                         'sayfaAraligi': sayfaAraligi,
                         'aciklama': aciklama,
+                        'durum': 'bekliyor',
                       },
                     ],
-                    'durum': 'bekliyor',
                   });
                 }
               }
 
+              if (!context.mounted) return;
               Navigator.pop(context);
+              setState(() {});
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Ödev kitaba özel açıklamasıyla eklendi."),
@@ -211,8 +216,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 
-  // Öğrencileri ve alt koleksiyondaki okunan kitapları çekip toplam sayfa hesaplayan fonksiyon
-  Future<List<Map<String, dynamic>>> _getOgrencilerVeSayfalar() async {
+  // Öğrencileri, okunan sayfaları ve ödev durum özetlerini çeken fonksiyon
+  Future<List<Map<String, dynamic>>> _getOgrencilerVeVeriler() async {
     var studentsQuery = await FirebaseFirestore.instance
         .collection('students')
         .where('classId', isEqualTo: widget.classId)
@@ -223,7 +228,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
     for (var doc in studentsQuery.docs) {
       var studentData = doc.data();
 
-      // Her öğrencinin okunan_kitaplar alt koleksiyonunu çekiyoruz
+      // Okunan kitaplar toplam sayfa hesabı
       var kitaplarQuery = await doc.reference
           .collection('okunan_kitaplar')
           .get();
@@ -236,14 +241,36 @@ class _StudentListScreenState extends State<StudentListScreen> {
         }
       }
 
+      // Ödev durumları hesabı
+      var odevQuery = await doc.reference.collection('odevler').get();
+      int toplamOdev = 0;
+      int yapilanOdev = 0;
+      bool kilitliVar = false;
+
+      for (var odevDoc in odevQuery.docs) {
+        var odevData = odevDoc.data();
+        List kitaplar = odevData['kitaplar'] ?? [];
+        for (var k in kitaplar) {
+          toplamOdev++;
+          if (k['durum'] == 'yapildi') {
+            yapilanOdev++;
+          } else if (k['durum'] == 'ogretmen_reddi') {
+            kilitliVar = true;
+          }
+        }
+      }
+
       ogrenciListesi.add({
         'id': doc.id,
         ...studentData,
         'toplamSayfa': toplamSayfa,
+        'toplamOdev': toplamOdev,
+        'yapilanOdev': yapilanOdev,
+        'kilitliVar': kilitliVar,
       });
     }
 
-    // Eğer sıralama butonu aktifse, toplam sayfa sayısına göre büyükten küçüğe sırala
+    // Sıralama modu aktifse toplam sayfa sayısına göre büyükten küçüğe sırala
     if (_siralamayiAc) {
       ogrenciListesi.sort(
         (a, b) => (b['toplamSayfa'] as int).compareTo(a['toplamSayfa'] as int),
@@ -258,116 +285,220 @@ class _StudentListScreenState extends State<StudentListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("${widget.className} Öğrencileri"),
-        actions: [
-          // 1. Ödev Verme Butonu (Yeni Eklenen)
-          IconButton(
-            icon: const Icon(Icons.assignment_add),
-            tooltip: "Sınıfa Ödev Ver",
-            onPressed: () => _odevVerDialog(context),
-          ),
-          // Liderlik / Sıralama Butonu Eklendi
-          IconButton(
-            icon: Icon(_siralamayiAc ? Icons.star : Icons.sort_by_alpha),
-            tooltip: "Sıralama Modunu Değiştir",
-            onPressed: () {
-              setState(() {
-                _siralamayiAc = !_siralamayiAc;
-              });
-            },
-          ),
-        ],
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _getOgrencilerVeSayfalar(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text("Bu sınıfta henüz kayıtlı öğrenci yok."),
-            );
-          }
-
-          final students = snapshot.data!;
-
-          return ListView.builder(
-            itemCount: students.length,
-            itemBuilder: (context, index) {
-              final student = students[index];
-              final firstName = student['firstName'] ?? '';
-              final lastName = student['lastName'] ?? '';
-              final toplamSayfa = student['toplamSayfa'] ?? 0;
-
-              final initials =
-                  (firstName.isNotEmpty ? firstName[0] : '') +
-                  (lastName.isNotEmpty ? lastName[0] : '');
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: ListTile(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StudentDetailScreen(
-                          studentData: student,
-                          studentId: student['id'],
+      body: Column(
+        children: [
+          // YATAY KAYDIRILABİLİR HIZLI ERİŞİM AKSİYON PANELİ
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            color: Colors.indigo.shade50,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildHizliIslemButonu(
+                    icon: Icons.fact_check,
+                    label: "İş Takibi",
+                    color: Colors.teal,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              SinifIsTakipScreen(classId: widget.classId),
                         ),
-                      ),
-                    ).then(
-                      (_) => setState(() {}),
-                    ); // Detaydan dönünce listeyi tazele
-                  },
-                  leading: _siralamayiAc
-                      ? CircleAvatar(
-                          backgroundColor: Colors.amber.shade100,
-                          child: Text(
-                            "${index + 1}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber,
-                            ),
+                      );
+                    },
+                  ),
+                  _buildHizliIslemButonu(
+                    icon: Icons.date_range,
+                    label: "Hızlı Ödev Durumu Ekle",
+                    color: Colors.indigo,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TarihBazliOdevYoneticisiScreen(
+                            classId: widget.classId,
                           ),
-                        )
-                      : CircleAvatar(
-                          backgroundColor: Colors.indigo.shade100,
-                          child: Text(
-                            initials.toUpperCase(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                  _buildHizliIslemButonu(
+                    icon: Icons.checklist_rtl,
+                    label: "Toplu Ödev",
+                    color: Colors.blue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TopluOdevScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildHizliIslemButonu(
+                    icon: Icons.assignment_add,
+                    label: "Ödev Ver",
+                    color: Colors.orange.shade800,
+                    onTap: () => _odevVerDialog(context),
+                  ),
+                  _buildHizliIslemButonu(
+                    icon: _siralamayiAc ? Icons.star : Icons.sort_by_alpha,
+                    label: _siralamayiAc ? "Puan Sırası" : "Alfabetik",
+                    color: Colors.purple,
+                    onTap: () {
+                      setState(() {
+                        _siralamayiAc = !_siralamayiAc;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ÖĞRENCİ LİSTESİ
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _getOgrencilerVeVeriler(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(
+                    child: Text("Bu sınıfta henüz kayıtlı öğrenci yok."),
+                  );
+                }
+
+                final students = snapshot.data!;
+
+                return ListView.builder(
+                  itemCount: students.length,
+                  itemBuilder: (context, index) {
+                    final student = students[index];
+                    final firstName = student['firstName'] ?? '';
+                    final lastName = student['lastName'] ?? '';
+                    final toplamSayfa = student['toplamSayfa'] ?? 0;
+
+                    int toplamOdev = student['toplamOdev'] ?? 0;
+                    int yapilanOdev = student['yapilanOdev'] ?? 0;
+                    bool kilitliVar = student['kilitliVar'] ?? false;
+
+                    String odevDurumMetni = "Ödev yok";
+                    Color odevDurumRengi = Colors.grey;
+
+                    if (toplamOdev > 0) {
+                      if (kilitliVar) {
+                        odevDurumMetni =
+                            "Kilitli Ödev Var ($yapilanOdev/$toplamOdev)";
+                        odevDurumRengi = Colors.red;
+                      } else if (yapilanOdev == toplamOdev) {
+                        odevDurumMetni =
+                            "Tümü Tamamlandı ($yapilanOdev/$toplamOdev)";
+                        odevDurumRengi = Colors.green;
+                      } else {
+                        odevDurumMetni =
+                            "Devam Ediyor ($yapilanOdev/$toplamOdev)";
+                        odevDurumRengi = Colors.orange;
+                      }
+                    }
+
+                    final initials =
+                        (firstName.isNotEmpty ? firstName[0] : '') +
+                        (lastName.isNotEmpty ? lastName[0] : '');
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      child: ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StudentDetailScreen(
+                                studentData: student,
+                                studentId: student['id'],
+                              ),
+                            ),
+                          ).then((_) => setState(() {}));
+                        },
+                        leading: _siralamayiAc
+                            ? CircleAvatar(
+                                backgroundColor: Colors.amber.shade100,
+                                child: Text(
+                                  "${index + 1}",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.amber,
+                                  ),
+                                ),
+                              )
+                            : CircleAvatar(
+                                backgroundColor: Colors.indigo.shade100,
+                                child: Text(
+                                  initials.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.indigo,
+                                  ),
+                                ),
+                              ),
+                        title: Text(
+                          "$firstName $lastName",
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Sınıf No: ${student['schoolNumber'] ?? 'Belirtilmemiş'}  •  Toplam: $toplamSayfa Sayfa",
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              odevDurumMetni,
+                              style: TextStyle(
+                                color: odevDurumRengi,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                        isThreeLine: true,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () =>
+                                  _duzenle(context, student['id'], student),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _sil(context, student['id']),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
                               color: Colors.indigo,
                             ),
-                          ),
+                          ],
                         ),
-                  title: Text(
-                    "$firstName $lastName",
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    "Sınıf No: ${student['schoolNumber'] ?? 'Belirtilmemiş'}  •  Toplam: $toplamSayfa Sayfa",
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () =>
-                            _duzenle(context, student['id'], student),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _sil(context, student['id']),
-                      ),
-                      const Icon(Icons.chevron_right, color: Colors.indigo),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -375,9 +506,61 @@ class _StudentListScreenState extends State<StudentListScreen> {
             context,
             MaterialPageRoute(builder: (_) => const AddStudentScreen()),
           );
-          setState(() {}); // Yeni öğrenci eklenip gelinirse listeyi güncelle
+          setState(() {});
         },
         child: const Icon(Icons.person_add),
+      ),
+    );
+  }
+
+  // Üst kısımdaki hızlı işlem butonları için yardımcı widget
+  Widget _buildHizliIslemButonu({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 95,
+          height: 75,
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.grey.shade800,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

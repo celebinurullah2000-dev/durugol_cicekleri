@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // Çıkış yapark
 import 'login_screen.dart'; // Çıkış yapınca tekrar giriş ekranına dönmek için
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'OkudugumKitaplarScreen.dart';
-import 'OdevlerimScreen.dart';
+import 'odevlerim_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   final String studentId;
@@ -15,18 +15,43 @@ class StudentHomeScreen extends StatefulWidget {
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   String studentName = "Öğrenci"; // Başlangıç değeri
+  String classId = ""; // Sınıf ID'sini tutmak için değişken
 
   @override
   void initState() {
     super.initState();
-    _loadStudentName(); // Sayfa açılır açılmaz ismi yüklüyoruz
+    _loadStudentData(); // Hem ismi hem de sınıf ID'sini yüklüyoruz
   }
 
-  // İsim yükleme fonksiyonu
-  Future<void> _loadStudentName() async {
+  // Öğrenci bilgilerini SharedPreferences ve Firestore'dan yükleme
+  Future<void> _loadStudentData() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Önce hafızadan alalım
+    String isim = prefs.getString('studentName') ?? "Öğrenci";
+    String cId = prefs.getString('classId') ?? "";
+
+    // Eğer hafızada classId yoksa doğrudan Firestore'dan çekelim (Garanti yöntem)
+    if (cId.isEmpty) {
+      var studentDoc = await FirebaseFirestore.instance
+          .collection('students')
+          .doc(widget.studentId)
+          .get();
+
+      if (studentDoc.exists) {
+        var data = studentDoc.data() as Map<String, dynamic>;
+        cId = data['classId'] ?? "";
+        isim = "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}".trim();
+
+        // Hafızaya kaydedelim ki bir sonraki seferde hızlı gelsin
+        await prefs.setString('classId', cId);
+        await prefs.setString('studentName', isim);
+      }
+    }
+
     setState(() {
-      studentName = prefs.getString('studentName') ?? "Öğrenci";
+      studentName = isim.isNotEmpty ? isim : "Öğrenci";
+      classId = cId; // Sınıf ID değişkenimizi dolduruyoruz
     });
   }
 
@@ -147,11 +172,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       ),
                     );
                   } else if (menuItems[index]['title'] == 'Ödevlerim') {
+                    if (classId.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Sınıf bilgisi yükleniyor, lütfen tekrar deneyin.",
+                          ),
+                        ),
+                      );
+                      return;
+                    }
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            OdevlerimScreen(studentId: widget.studentId),
+                        builder: (context) => OdevlerimScreen(
+                          studentId: widget.studentId,
+                          classId: classId,
+                        ),
                       ),
                     );
                   } else {
