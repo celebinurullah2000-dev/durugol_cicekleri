@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'student_detail_screen.dart'; // Öğrenci detay ekranının import edildiğinden emin olun
+import 'student_kitap_odev_screen.dart'; // Öğrenci detay ekranının import edildiğinden emin olun
 
 class TopluOdevScreen extends StatefulWidget {
   const TopluOdevScreen({super.key});

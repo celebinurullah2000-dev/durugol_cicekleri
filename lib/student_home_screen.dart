@@ -4,6 +4,7 @@ import 'login_screen.dart'; // Çıkış yapınca tekrar giriş ekranına dönme
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'OkudugumKitaplarScreen.dart';
 import 'odevlerim_screen.dart';
+import 'cesitli_isler_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   final String studentId;
@@ -110,6 +111,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       {'title': 'Davranışlarım', 'image': 'assets/images/davranislarim.png'},
       {'title': 'Denemelerim', 'image': 'assets/images/testlerim.png'},
       {'title': 'Kurslarım', 'image': 'assets/images/kurslarim.png'},
+      {'title': 'Çeşitli İşler', 'image': 'assets/images/cesitli_isler.png'},
     ];
 
     return Scaffold(
@@ -186,6 +188,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => OdevlerimScreen(
+                          studentId: widget.studentId,
+                          classId: classId,
+                        ),
+                      ),
+                    );
+                  } else if (menuItems[index]['title'] == 'Çeşitli İşler') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CesitliIslerScreen(
                           studentId: widget.studentId,
                           classId: classId,
                         ),
