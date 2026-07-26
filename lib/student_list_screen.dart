@@ -9,6 +9,7 @@ import 'kitap_okuma_takip_screen.dart';
 import 'student_detail_screen.dart';
 // ignore: unused_import
 import 'ogrenci_yukleme_screen.dart';
+import 'oturma_duzeni_screen.dart';
 
 class StudentListScreen extends StatefulWidget {
   final String classId;
@@ -394,6 +395,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   builder: (context) => NobetciScreen(
                                     studentId: "",
                                     classId: widget.classId,
+                                    isTeacher: true, // Öğretmen yetkisi aktif
                                   ),
                                 ),
                               );
@@ -410,6 +412,23 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   builder: (context) => KitapOkumaTakipScreen(
                                     classId: widget.classId,
                                     className: widget.className,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          // --- EKLENEN OTURMA DÜZENİ BUTONU ---
+                          _buildHizliIslemButonu(
+                            icon: Icons.grid_view,
+                            label: "Oturma Düzeni",
+                            color: Colors.indigo.shade700,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OturmaDuzeniScreen(
+                                    classId: widget.classId,
+                                    isTeacher: true, // Öğretmen yetkisi aktif
                                   ),
                                 ),
                               );

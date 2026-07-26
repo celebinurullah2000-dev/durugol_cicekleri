@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'nobetci_screen.dart';
+import 'Ogrenci_Oturma_Duzeni_Screen.dart';
 
 class CesitliIslerScreen extends StatefulWidget {
   final String studentId;
@@ -20,6 +21,7 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
   final List<String> _menuItems = [
     "Nöbetçi",
     "Görevli",
+    "Oturma Düzeni",
     "Doğum Günleri",
     "Devamsızlık",
     "Ders Programı",
@@ -77,6 +79,18 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
                             MaterialPageRoute(
                               builder: (context) => NobetciScreen(
                                 studentId: widget.studentId,
+                                classId: widget.classId,
+                                isTeacher:
+                                    false, // Öğrenci yetkisi (salt okunur)
+                              ),
+                            ),
+                          );
+                        }
+                        if (_menuItems[_selectedIndex] == "Oturma Düzeni") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OgrenciOturmaDuzeniScreen(
                                 classId: widget.classId,
                               ),
                             ),
