@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'add_student_screen.dart';
-import 'TopluOdevScreen.dart';
-import 'TarihBazliOdevYoneticisiScreen.dart';
-import 'SinifIsTakipScreen.dart';
+import 'package:durugol_cicekleri/add_student_screen.dart';
+import 'package:durugol_cicekleri/TopluOdevScreen.dart';
+import 'package:durugol_cicekleri/TarihBazliOdevYoneticisiScreen.dart';
+import 'package:durugol_cicekleri/SinifIsTakipScreen.dart';
 import 'nobetci_screen.dart';
-import 'kitap_okuma_takip_screen.dart';
-import 'student_detail_screen.dart';
+import 'package:durugol_cicekleri/Kitap_Okuma_Takip_Screen.dart';
+import 'package:durugol_cicekleri/student_detail_screen.dart';
 // ignore: unused_import
-import 'ogrenci_yukleme_screen.dart';
+import 'package:durugol_cicekleri/ogrenci_yukleme_screen.dart';
 import 'oturma_duzeni_screen.dart';
-import 'Devamsizlik_Screen.dart';
+import 'package:durugol_cicekleri/Devamsizlik_Screen.dart';
 
 Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   String classId,
@@ -61,69 +61,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
   void _sil(BuildContext context, String studentId) {
     FirebaseFirestore.instance.collection('students').doc(studentId).delete();
     setState(() {});
-  }
-
-  void _showOdevIslemleriSecenekleri(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Ödev İşlemleri",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.date_range, color: Colors.indigo),
-                title: const Text("Hızlı Ödev Durumu Ekle"),
-                onTap: () {
-                  Navigator.pop(context); // Menüyü kapat
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TarihBazliOdevYoneticisiScreen(
-                        classId: widget.classId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.checklist_rtl, color: Colors.blue),
-                title: const Text("Toplu Ödev"),
-                onTap: () {
-                  Navigator.pop(context); // Menüyü kapat
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TopluOdevScreen(),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: Icon(
-                  Icons.assignment_add,
-                  color: Colors.orange.shade800,
-                ),
-                title: const Text("Ödev Ver"),
-                onTap: () {
-                  Navigator.pop(context); // Menüyü kapat
-                  _odevVerDialog(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   // Öğrenci Düzenleme Fonksiyonu
@@ -439,12 +376,39 @@ class _StudentListScreenState extends State<StudentListScreen> {
                             },
                           ),
                           _buildHizliIslemButonu(
-                            icon: Icons.assignment,
-                            label: "Ödev İşlemleri",
+                            icon: Icons.date_range,
+                            label: "Hızlı Ödev Durumu Ekle",
                             color: Colors.indigo,
                             onTap: () {
-                              _showOdevIslemleriSecenekleri(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      TarihBazliOdevYoneticisiScreen(
+                                        classId: widget.classId,
+                                      ),
+                                ),
+                              );
                             },
+                          ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.checklist_rtl,
+                            label: "Toplu Ödev",
+                            color: Colors.blue,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const TopluOdevScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.assignment_add,
+                            label: "Ödev Ver",
+                            color: Colors.orange.shade800,
+                            onTap: () => _odevVerDialog(context),
                           ),
                         ],
                       ),

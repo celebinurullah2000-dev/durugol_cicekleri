@@ -7,8 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 // ignore: unused_import
 import 'package:cloud_firestore/cloud_firestore.dart'; // FirebaseFirestore hatası için
-import 'student_home_screen.dart'; // StudentHomeScreen hatası için
-import 'package:intl/date_symbol_data_local.dart';
+import 'student_home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
