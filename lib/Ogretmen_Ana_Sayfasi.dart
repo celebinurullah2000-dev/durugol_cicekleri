@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:durugol_cicekleri/add_student_screen.dart';
-import 'package:durugol_cicekleri/TopluOdevScreen.dart';
-import 'package:durugol_cicekleri/TarihBazliOdevYoneticisiScreen.dart';
-import 'package:durugol_cicekleri/SinifIsTakipScreen.dart';
+import 'add_student_screen.dart';
+import 'TopluOdevScreen.dart';
+import 'TarihBazliOdevYoneticisiScreen.dart';
+import 'SinifIsTakipScreen.dart';
 import 'nobetci_screen.dart';
-import 'package:durugol_cicekleri/Kitap_Okuma_Takip_Screen.dart';
-import 'package:durugol_cicekleri/student_detail_screen.dart';
+import 'kitap_okuma_takip_screen.dart';
+import 'student_detail_screen.dart';
 // ignore: unused_import
-import 'package:durugol_cicekleri/ogrenci_yukleme_screen.dart';
+import 'ogrenci_yukleme_screen.dart';
 import 'oturma_duzeni_screen.dart';
-import 'package:durugol_cicekleri/Devamsizlik_Screen.dart';
+import 'Devamsizlik_Screen.dart';
+import 'Sinif_Gorevleri_Screen.dart'; // --- EKLENEN SINIF GÖREVLERİ İMPORTU ---
 
 Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   String classId,
   String studentId,
 ) async {
-  // Sınıftaki tüm devamsızlık dokümanlarını çekiyoruz
   var snapshot = await FirebaseFirestore.instance
       .collection('classes')
       .doc(classId)
@@ -36,7 +36,6 @@ Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
     }
   }
 
-  // Tarihleri eskiden yeniye doğru sıralayalım
   gelmedigiTarihler.sort();
 
   return {'toplam': toplamDevamsizlik, 'tarihler': gelmedigiTarihler};
@@ -57,13 +56,135 @@ class StudentListScreen extends StatefulWidget {
 }
 
 class _StudentListScreenState extends State<StudentListScreen> {
-  // Öğrenci Silme Fonksiyonu
   void _sil(BuildContext context, String studentId) {
     FirebaseFirestore.instance.collection('students').doc(studentId).delete();
     setState(() {});
   }
 
-  // Öğrenci Düzenleme Fonksiyonu
+  // --- NÖBETÇİ & GÖREVLİ SEÇENEKLERİ MENÜSÜ ---
+  void _showNobetciVeGorevliSecenekleri(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Nöbetçi & Görevli İşlemleri",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              ListTile(
+                leading: Icon(
+                  Icons.assignment_ind,
+                  color: Colors.green.shade700,
+                ),
+                title: const Text("Nöbetçi Öğrenci"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NobetciScreen(
+                        studentId: "",
+                        classId: widget.classId,
+                        isTeacher: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.how_to_vote, color: Colors.indigo),
+                title: const Text("Sınıf Görevlileri (Seçim & Takip)"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SinifGorevleriScreen(
+                        classId:
+                            widget.classId, // sinifId yerine classId olmalı
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showOdevIslemleriSecenekleri(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Ödev İşlemleri",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.date_range, color: Colors.indigo),
+                title: const Text("Hızlı Ödev Durumu Ekle"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TarihBazliOdevYoneticisiScreen(
+                        classId: widget.classId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.checklist_rtl, color: Colors.blue),
+                title: const Text("Toplu Ödev"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TopluOdevScreen(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.assignment_add,
+                  color: Colors.orange.shade800,
+                ),
+                title: const Text("Ödev Ver"),
+                onTap: () {
+                  Navigator.pop(context);
+                  _odevVerDialog(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _duzenle(
     BuildContext context,
     String studentId,
@@ -133,7 +254,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 
-  // --- ÖDEV VERME DİYALOĞU ---
   void _odevVerDialog(BuildContext context) {
     final TextEditingController tarihStrController = TextEditingController(
       text: "21 Temmuz 2026, Salı",
@@ -249,7 +369,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 
-  // Türkçe karakter duyarlı alfabetik sıralama fonksiyonu
   int _turkceKarsilastir(String a, String b) {
     const String turkceAlfabe = 'aabcçdefgğhıijklmnoöprsştuüvyz';
 
@@ -281,7 +400,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
       int indexA = turkceAlfabe.indexOf(aKucuk[i]);
       int indexB = turkceAlfabe.indexOf(bKucuk[i]);
 
-      // Eğer karakter alfabe tanımımızda yoksa varsayılan kod birimini kullan
       if (indexA == -1 || indexB == -1) {
         int comp = aKucuk.codeUnitAt(i).compareTo(bKucuk.codeUnitAt(i));
         if (comp != 0) return comp;
@@ -293,7 +411,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
     return aKucuk.length.compareTo(bKucuk.length);
   }
 
-  // Öğrencileri alfabetik sıraya göre çeken fonksiyon
   Future<List<Map<String, dynamic>>> _getOgrenciler() async {
     var studentsQuery = await FirebaseFirestore.instance
         .collection('students')
@@ -305,7 +422,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
       ogrenciListesi.add({'id': doc.id, ...doc.data()});
     }
 
-    // Türkçe kurala göre önce Ad, adlar aynıysa Soyad sıralaması
     ogrenciListesi.sort((a, b) {
       String adA = a['firstName'] ?? '';
       String adB = b['firstName'] ?? '';
@@ -333,7 +449,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
       ),
       body: Column(
         children: [
-          // YATAY KAYDIRILABİLİR HIZLI ERİŞİM AKSİYON PANELİ (2 Satır)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             color: Colors.indigo.shade50,
@@ -346,20 +461,15 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     children: [
                       Row(
                         children: [
-                          /*_buildHizliIslemButonu(
-                            icon: Icons.cloud_upload,
-                            label: "Öğrenci Yükle",
-                            color: Colors.purple,
+                          // --- İSTEDİĞİNİZ YERE "NÖBETÇİ & GÖREVLİ" BUTONU EKLENDİ ---
+                          _buildHizliIslemButonu(
+                            icon: Icons.group_work,
+                            label: "Nöbetçi & Görevli",
+                            color: Colors.green.shade700,
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const OgrenciYuklemeScreen(),
-                                ),
-                              );
+                              _showNobetciVeGorevliSecenekleri(context);
                             },
-                          ),*/
+                          ),
                           _buildHizliIslemButonu(
                             icon: Icons.fact_check,
                             label: "İş Takibi",
@@ -376,62 +486,19 @@ class _StudentListScreenState extends State<StudentListScreen> {
                             },
                           ),
                           _buildHizliIslemButonu(
-                            icon: Icons.date_range,
-                            label: "Hızlı Ödev Durumu Ekle",
+                            icon: Icons.assignment,
+                            label: "Ödev İşlemleri",
                             color: Colors.indigo,
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      TarihBazliOdevYoneticisiScreen(
-                                        classId: widget.classId,
-                                      ),
-                                ),
-                              );
+                              _showOdevIslemleriSecenekleri(context);
                             },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.checklist_rtl,
-                            label: "Toplu Ödev",
-                            color: Colors.blue,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const TopluOdevScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.assignment_add,
-                            label: "Ödev Ver",
-                            color: Colors.orange.shade800,
-                            onTap: () => _odevVerDialog(context),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          _buildHizliIslemButonu(
-                            icon: Icons.assignment_ind,
-                            label: "Nöbetçi Öğrenci",
-                            color: Colors.green.shade700,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => NobetciScreen(
-                                    studentId: "",
-                                    classId: widget.classId,
-                                    isTeacher: true, // Öğretmen yetkisi aktif
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                          // Eski "Nöbetçi Öğrenci" düğmesi kaldırıldı ve yukarı taşındı.
                           _buildHizliIslemButonu(
                             icon: Icons.menu_book,
                             label: "Kitap ve Ödev",
@@ -448,7 +515,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
                               );
                             },
                           ),
-                          // --- EKLENEN OTURMA DÜZENİ BUTONU ---
                           _buildHizliIslemButonu(
                             icon: Icons.grid_view,
                             label: "Oturma Düzeni",
@@ -459,7 +525,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                 MaterialPageRoute(
                                   builder: (context) => OturmaDuzeniScreen(
                                     classId: widget.classId,
-                                    isTeacher: true, // Öğretmen yetkisi aktif
+                                    isTeacher: true,
                                   ),
                                 ),
                               );
@@ -489,7 +555,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
             ),
           ),
 
-          // TEMEL ÖĞRENCİ LİSTESİ VE YÖNETİMİ
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _getOgrenciler(),

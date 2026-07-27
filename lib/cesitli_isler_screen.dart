@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'nobetci_screen.dart';
 import 'Ogrenci_Oturma_Duzeni_Screen.dart';
+import 'Ogrenci_Gorevli_Goruntuleme_Screen.dart';
 
 class OgrenciDevamsizlikScreen extends StatelessWidget {
   final String classId;
@@ -291,6 +292,18 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
                                 classId: widget.classId,
                                 studentId: widget.studentId,
                               ),
+                            ),
+                          );
+                        }
+                        if (_menuItems[_selectedIndex] == "Görevli") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  OgrenciGorevliGoruntulemeScreen(
+                                    classId: widget.classId,
+                                    studentId: widget.studentId,
+                                  ),
                             ),
                           );
                         }

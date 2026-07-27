@@ -9,50 +9,68 @@ class HafizaOyunuScreen extends StatefulWidget {
 }
 
 class _HafizaOyunuScreenState extends State<HafizaOyunuScreen> {
-  // Oyun kartlarında kullanılacak ikon veya görseller (Örn: Hayvanlar / Nesneler)
-  final List<IconData> _kartSimgeleri = [
+  final List<IconData> _tumSimgeler = [
     Icons.pets,
     Icons.star,
     Icons.favorite,
     Icons.wb_sunny,
     Icons.ac_unit,
     Icons.bolt,
+    Icons.face,
+    Icons.local_florist,
+    Icons.music_note,
+    Icons.airplanemode_active,
   ];
 
+  int _currentLevel = 1;
+  late int _aktifKartSayisi;
   late List<Map<String, dynamic>> _kartlar;
   int? _oncekiSecimIndex;
   bool _beklemede = false;
-  int _skor = 0;
+
+  // Yeni Skor, Hamle ve Can Değişkenleri
+  int _toplamPuan = 0;
+  int _bulunanCift = 0;
   int _hamleSayisi = 0;
+  int _kalanCan = 3;
+  int _kalanHamleLimiti = 0;
 
   @override
   void initState() {
     super.initState();
-    _oyunuBaslat();
+    _seviyeyiBaslat();
   }
 
-  void _oyunuBaslat() {
-    // 6 simgeden çift oluşturarak 12 kartlık bir liste yapalım
+  void _seviyeyiBaslat() {
+    _aktifKartSayisi = 4 + (_currentLevel - 1) * 2;
+    if (_aktifKartSayisi > 20) _aktifKartSayisi = 20;
+
+    int ciftSayisi = _aktifKartSayisi ~/ 2;
+
+    // Kart sayısına göre dinamik hamle limiti (Örn: Çift başına 3-4 hata hakkı)
+    _kalanHamleLimiti = ciftSayisi * 3;
+
     List<Map<String, dynamic>> geciciList = [];
-    for (int i = 0; i < _kartSimgeleri.length; i++) {
+    for (int i = 0; i < ciftSayisi; i++) {
       geciciList.add({
         'id': i,
-        'icon': _kartSimgeleri[i],
+        'icon': _tumSimgeler[i],
         'acik': false,
         'eslesti': false,
       });
       geciciList.add({
         'id': i,
-        'icon': _kartSimgeleri[i],
+        'icon': _tumSimgeler[i],
         'acik': false,
         'eslesti': false,
       });
     }
-    geciciList.shuffle(); // Kartları karıştır
+    geciciList.shuffle();
+
     setState(() {
       _kartlar = geciciList;
       _oncekiSecimIndex = null;
-      _skor = 0;
+      _bulunanCift = 0;
       _hamleSayisi = 0;
       _beklemede = false;
     });
@@ -70,22 +88,26 @@ class _HafizaOyunuScreenState extends State<HafizaOyunuScreen> {
       _oncekiSecimIndex = index;
     } else {
       _hamleSayisi++;
+      _kalanHamleLimiti--; // Her yanlış veya doğru hamlede limit azalır
       int oncekiIndex = _oncekiSecimIndex!;
 
-      // İki kart aynı mı kontrol et
       if (_kartlar[oncekiIndex]['id'] == _kartlar[index]['id']) {
-        // Eşleşti
+        // Eşleşti! Az hamle yapana daha çok puan
         _kartlar[oncekiIndex]['eslesti'] = true;
         _kartlar[index]['eslesti'] = true;
         _oncekiSecimIndex = null;
-        _skor++;
+        _bulunanCift++;
 
-        // Oyun bitti mi kontrolü
-        if (_skor == _kartSimgeleri.length) {
-          _oyunBitirmeDiyalogGoster();
+        // Dinamik Puan Hesaplama (Seviye ve hıza göre)
+        int kazanilanPuan = (20 - _hamleSayisi).clamp(5, 20) * _currentLevel;
+        _toplamPuan += kazanilanPuan;
+
+        // Bölüm bitti mi?
+        if (_bulunanCift == _aktifKartSayisi ~/ 2) {
+          _seviyeBittiDiyalogGoster();
         }
       } else {
-        // Eşleşmedi, kısa bir süre gösterip tekrar kapat
+        // Eşleşmedi
         _beklemede = true;
         Timer(const Duration(milliseconds: 800), () {
           setState(() {
@@ -96,23 +118,101 @@ class _HafizaOyunuScreenState extends State<HafizaOyunuScreen> {
           });
         });
       }
+
+      // Hamle Limiti bitti mi kontrolü
+      if (_kalanHamleLimiti <= 0 && _bulunanCift < _aktifKartSayisi ~/ 2) {
+        _canKaybet();
+      }
     }
   }
 
-  void _oyunBitirmeDiyalogGoster() {
+  void _canKaybet() {
+    setState(() {
+      _kalanCan--;
+      // Açık kalmış eşleşmemiş tüm kartları kapat
+      for (var kart in _kartlar) {
+        if (!kart['eslesti']) {
+          kart['acik'] = false;
+        }
+      }
+      _oncekiSecimIndex = null;
+
+      // Canı kaldıysa yeni hamle hakkı ver ve kartları yeniden karıştır
+      if (_kalanCan > 0) {
+        _kalanHamleLimiti = (_aktifKartSayisi ~/ 2) * 3;
+        _kartlar.shuffle();
+      }
+    });
+
+    if (_kalanCan <= 0) {
+      _oyunBittiDiyalogGoster();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Hamle hakkın bitti! Bir can kaybettin ve kartlar karıştırıldı! ⚠️",
+          ),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _seviyeBittiDiyalogGoster() {
+    bool sonLevelMi = _aktifKartSayisi >= 20;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Tebrikler! 🎉"),
+        title: Text(
+          sonLevelMi ? "Tebrikler Şampiyon! 🏆" : "Bölüm Tamamlandı! 🎉",
+        ),
         content: Text(
-          "Tebrikler, tüm eşleşmeleri buldun!\nToplam Hamle: $_hamleSayisi",
+          sonLevelMi
+              ? "Tüm seviyeleri bitirdin!\nToplam Puanın: $_toplamPuan"
+              : "$_currentLevel. Seviyeyi geçtin!\nPuanın: $_toplamPuan\nSonraki seviyeye geçelim mi?",
         ),
         actions: [
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _oyunuBaslat();
+              setState(() {
+                if (sonLevelMi) {
+                  _currentLevel = 1;
+                  _toplamPuan = 0;
+                  _kalanCan = 3;
+                } else {
+                  _currentLevel++;
+                }
+                _seviyeyiBaslat();
+              });
+            },
+            child: Text(sonLevelMi ? "Yeniden Başla" : "Sonraki Seviye"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _oyunBittiDiyalogGoster() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Oyun Bitti! 😢"),
+        content: Text("Canların bitti.\nToplam Puanın: $_toplamPuan"),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _currentLevel = 1;
+                _toplamPuan = 0;
+                _kalanCan = 3;
+                _seviyeyiBaslat();
+              });
             },
             child: const Text("Tekrar Oyna"),
           ),
@@ -123,38 +223,64 @@ class _HafizaOyunuScreenState extends State<HafizaOyunuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    int sutunSayisi = _aktifKartSayisi <= 6 ? 2 : 4;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Hafıza Kartı Oyunu"),
+        title: Text("Hafıza Oyunu - Seviye $_currentLevel"),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _oyunuBaslat,
+            onPressed: () {
+              setState(() {
+                _currentLevel = 1;
+                _toplamPuan = 0;
+                _kalanCan = 3;
+                _seviyeyiBaslat();
+              });
+            },
             tooltip: "Yeniden Başlat",
           ),
         ],
       ),
       body: Column(
         children: [
+          // Bilgi Paneli (Can, Puan, Hamle Limiti)
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(12.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Text(
-                  "Hamle: $_hamleSayisi",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                // Can Göstergesi (Kalpler)
+                Row(
+                  children: List.generate(
+                    3,
+                    (index) => Icon(
+                      index < _kalanCan
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: Colors.red,
+                      size: 24,
+                    ),
                   ),
                 ),
                 Text(
-                  "Bulunan: $_skor / ${_kartSimgeleri.length}",
+                  "Puan: $_toplamPuan",
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.green,
+                    color: Colors.indigo,
+                  ),
+                ),
+                Text(
+                  "Hak: $_kalanHamleLimiti",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: _kalanHamleLimiti <= 3
+                        ? Colors.red
+                        : Colors.grey.shade700,
                   ),
                 ),
               ],
@@ -163,8 +289,8 @@ class _HafizaOyunuScreenState extends State<HafizaOyunuScreen> {
           Expanded(
             child: GridView.builder(
               padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3, // 3 sütunlu görünüm
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: sutunSayisi,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
                 childAspectRatio: 1,
@@ -186,7 +312,7 @@ class _HafizaOyunuScreenState extends State<HafizaOyunuScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -196,12 +322,12 @@ class _HafizaOyunuScreenState extends State<HafizaOyunuScreen> {
                       child: kartAcik
                           ? Icon(
                               _kartlar[index]['icon'],
-                              size: 40,
+                              size: 36,
                               color: Colors.indigo.shade700,
                             )
                           : const Icon(
                               Icons.question_mark,
-                              size: 32,
+                              size: 28,
                               color: Colors.white,
                             ),
                     ),

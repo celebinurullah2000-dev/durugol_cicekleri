@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_class_screen.dart';
-import 'student_list_screen.dart';
+import 'Ogretmen_Ana_Sayfasi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 

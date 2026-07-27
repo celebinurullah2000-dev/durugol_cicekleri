@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'hafiza_oyunu_screen.dart'; // Hafıza oyunu ekranı importu
 import 'es_anlamli_oyunu_screen.dart';
 import 'Zit_Anlamli_Kelime_Sayfasi.dart';
+import 'Toplama_Oyunu_Screen.dart';
+import 'Cikarma_Oyunu_Screen.dart';
 
 class OyunlarMenuScreen extends StatelessWidget {
   final String studentId;
@@ -65,13 +67,49 @@ class OyunlarMenuScreen extends StatelessWidget {
               context,
               baslik: "Zıt Anlamlılar",
               ikon: Icons.swap_horiz, // İsteğe göre ikon değiştirebilirsin
-              renk: Colors.purple.shade50,
-              ikonRenk: Colors.purple,
+              renk: Colors.green.shade50,
+              ikonRenk: Colors.green,
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ZitAnlamliKelimeSayfasi(
+                      studentId: studentId,
+                      classId: classId,
+                    ),
+                  ),
+                );
+              },
+            ),
+            _buildOyunKarti(
+              context,
+              baslik: "Toplama Oyunu",
+              ikon: Icons.add_circle, // İsteğe göre ikon değiştirebilirsin
+              renk: Colors.red.shade50,
+              ikonRenk: Colors.red,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ToplamaOyunuScreen(
+                      studentId: studentId,
+                      classId: classId,
+                    ),
+                  ),
+                );
+              },
+            ),
+            _buildOyunKarti(
+              context,
+              baslik: "Çıkarma Oyunu",
+              ikon: Icons.remove_circle, // İsteğe göre ikon değiştirebilirsin
+              renk: Colors.deepOrange.shade50,
+              ikonRenk: Colors.deepOrange,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CikarmaOyunuScreen(
                       studentId: studentId,
                       classId: classId,
                     ),
