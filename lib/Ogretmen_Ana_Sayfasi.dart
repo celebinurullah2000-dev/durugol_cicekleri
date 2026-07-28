@@ -1,3 +1,4 @@
+import 'Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'add_student_screen.dart';
@@ -12,6 +13,10 @@ import 'ogrenci_yukleme_screen.dart';
 import 'oturma_duzeni_screen.dart';
 import 'Devamsizlik_Screen.dart';
 import 'Sinif_Gorevleri_Screen.dart'; // --- EKLENEN SINIF GÖREVLERİ İMPORTU ---
+import 'Dogum_Gunleri_Screen.dart';
+import 'Haftalik_Ders_Programi_Screen.dart';
+import 'Kisisel_Deyimler_Screen.dart';
+import 'Kisisel_Atasozleri_Screen.dart';
 
 Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   String classId,
@@ -41,21 +46,192 @@ Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   return {'toplam': toplamDevamsizlik, 'tarihler': gelmedigiTarihler};
 }
 
-class StudentListScreen extends StatefulWidget {
+class OgretmenAnaSayfasi extends StatefulWidget {
   final String classId;
   final String className;
 
-  const StudentListScreen({
+  const OgretmenAnaSayfasi({
     super.key,
     required this.classId,
     required this.className,
   });
 
   @override
-  State<StudentListScreen> createState() => _StudentListScreenState();
+  State<OgretmenAnaSayfasi> createState() => _OgretmenAnaSayfasiState();
 }
 
-class _StudentListScreenState extends State<StudentListScreen> {
+void dogumGunuKontrolEtVeBildir(BuildContext context, String classId) async {
+  try {
+    var snapshot = await FirebaseFirestore.instance
+        .collection('students')
+        .where('classId', isEqualTo: classId)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      var data = doc.data();
+      String dogumTarihi = data['dogumTarihi'] ?? '';
+      int kalanGun = dogumGununeKalanGunHesapla(dogumTarihi);
+
+      // Doğum gününe 3 gün veya daha az kaldıysa (0 gün dahil)
+      if (kalanGun >= 0 && kalanGun <= 3) {
+        String adSoyad =
+            data['adSoyad'] ??
+            "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}";
+
+        // Bildirimin ard arda patlamaması için veya her açılışta göstermek istiyorsanız:
+        if (!context.mounted) return;
+
+        _dogumGunuDialogGoster(context, adSoyad, kalanGun);
+        break; // Birden fazla varsa önce yaklaşanı gösterip dönebiliriz
+      }
+    }
+  } catch (e) {
+    // Hata yönetimi sessiz geçilebilir
+  }
+}
+
+int dogumGununeKalanGunHesapla(String dogumTarihiStr) {
+  try {
+    List<String> parcalar = dogumTarihiStr.split('.');
+    if (parcalar.length != 3) return 999;
+    int gun = int.parse(parcalar[0]);
+    int ay = int.parse(parcalar[1]);
+
+    DateTime simdi = DateTime.now();
+    DateTime buYilDogumGunu = DateTime(simdi.year, ay, gun);
+
+    if (buYilDogumGunu.isBefore(DateTime(simdi.year, simdi.month, simdi.day))) {
+      buYilDogumGunu = DateTime(simdi.year + 1, ay, gun);
+    }
+
+    return buYilDogumGunu
+        .difference(DateTime(simdi.year, simdi.month, simdi.day))
+        .inDays;
+  } catch (e) {
+    return 999;
+  }
+}
+
+void _dogumGunuDialogGoster(
+  BuildContext context,
+  String ogrenciAdi,
+  int kalanGun,
+) {
+  String mesaj = kalanGun == 0
+      ? "Bugün $ogrenciAdi adlı arkadaşımızın doğum günü! 🎂 Birlikte nice mutlu yıllara dileyelim! 🎉"
+      : "$ogrenciAdi adlı arkadaşımızın doğum gününe $kalanGun gün kaldı! 🎈 Şimdiden hazırlıklara başlayalım! 🎁";
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Row(
+        children: const [
+          Icon(Icons.celebration, color: Colors.pink, size: 30),
+          SizedBox(width: 10),
+          Text("Doğum Günü Var!"),
+        ],
+      ),
+      content: Text(mesaj, style: const TextStyle(fontSize: 16)),
+      actions: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.pink,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Harika!"),
+        ),
+      ],
+    ),
+  );
+}
+
+class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      dogumGunuKontrolEtVeBildir(context, widget.classId);
+    });
+  }
+
+  /* Future<void> topluDogumTarihiYukle() async {
+    // Gönderdiğiniz listedeki ad-soyad ve doğum tarihi verileri
+    final Map<String, String> dogumListesi = {
+      "ASYA PATKAVAK": "30.07.2018",
+      "YUSUF ASAF BAYRAMLI": "15.10.2018",
+      "YUDUM ODABAŞ": "22.10.2018",
+      "ALYA AYDIN": "12.11.2018",
+      "ÇINAR ALP GÖZÜTOK": "15.11.2018",
+      "KUMSAL NAZ ÖNCÜ": "16.11.2018",
+      "ZEYNEP KILIÇARSLAN": "21.11.2018",
+      "GÜLCE YAĞIZOĞLU": "29.11.2018",
+      "ARDEN ODABAŞI": "03.12.2018",
+      "GÖRKEM TUNA BALCI": "14.12.2018",
+      "ASEL BEREN YONDEMİR": "02.01.2019",
+      "URAS SOĞUKSU": "04.01.2019",
+      "ÖMER DENİZ KEÇECİ": "03.02.2019",
+      "ESLEM SARE AKSU": "07.02.2019",
+      "İPEK ÖZTOPRAK": "20.02.2019",
+      "LİNA TİRYAKİ": "27.02.2019",
+      "ALİ HARUN ÜNSAL": "20.03.2019",
+      "ÖMER ASAF YAVUZARSLAN": "01.04.2019",
+      "YİĞİT ARSLAN": "10.04.2019",
+      "HAZAL DENİZ ÖZCAN": "12.04.2019",
+      "RÜZGAR GÜZELSU": "28.04.2019",
+      "UMUT ALP YAZIM": "24.05.2019",
+      "GİZEM AKÇAY": "30.05.2019",
+      "YAMAÇ ARSLAN": "10.06.2019",
+      "CANKAT İLKUTLU": "24.06.2019",
+      "ELİSA SARE YILDIRIM": "01.07.2019",
+      "GÜNEŞ KÜÇÜK": "16.08.2019",
+      "YUSUF YİĞİT AKSOY": "16.08.2019",
+      "DENİZ NİSA ARSLAN": "02.09.2019",
+      "CAN SAMSUNLU": "20.09.2019",
+      "AYŞE ELA ŞEN": "16.11.2019",
+    };
+
+    try {
+      // Sınıftaki öğrencileri Firestore'dan çekiyoruz
+      var snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('classId', isEqualTo: widget.classId)
+          .get();
+
+      int guncellenenSayisi = 0;
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data();
+        String firstName = (data['firstName'] ?? '').trim().toUpperCase();
+        String lastName = (data['lastName'] ?? '').trim().toUpperCase();
+        String tamAd = "$firstName $lastName";
+
+        // Eğer listede bu öğrencinin tam adı varsa doğum tarihini güncelleyelim
+        if (dogumListesi.containsKey(tamAd)) {
+          String dogumTarihi = dogumListesi[tamAd]!;
+          await doc.reference.update({'dogumTarihi': dogumTarihi});
+          guncellenenSayisi++;
+        }
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Başarılı! $guncellenenSayisi öğrencinin doğum tarihi yüklendi.",
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Hata oluştu: $e"), backgroundColor: Colors.red),
+      );
+    }
+  }*/
+
   void _sil(BuildContext context, String studentId) {
     FirebaseFirestore.instance.collection('students').doc(studentId).delete();
     setState(() {});
@@ -493,6 +669,53 @@ class _StudentListScreenState extends State<StudentListScreen> {
                               _showOdevIslemleriSecenekleri(context);
                             },
                           ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.cake,
+                            label: "Doğum Günleri",
+                            color: Colors.pink,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DogumGunleriScreen(
+                                    classId: widget.classId,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.library_books,
+                            label: "Sözlük",
+                            color: Colors.teal,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => KisiselSozlukScreen(
+                                    classId: widget.classId,
+                                    isTeacher: true,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.history_edu,
+                            label: "Atasözleri",
+                            color: Colors.teal,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => KisiselAtasozleriScreen(
+                                    classId: widget.classId,
+                                    isTeacher: true,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -546,6 +769,48 @@ class _StudentListScreenState extends State<StudentListScreen> {
                               );
                             },
                           ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.schedule,
+                            label: "Ders Programı",
+                            color: Colors.deepPurple,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HaftalikDersProgramiScreen(
+                                    classId: widget.classId,
+                                    isTeacher:
+                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.auto_stories,
+                            label: "Deyimler",
+                            color: Colors.deepPurple,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => KisiselDeyimlerScreen(
+                                    classId: widget.classId,
+                                    isTeacher:
+                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          /*IconButton(
+                            icon: const Icon(
+                              Icons.cloud_upload,
+                              color: Colors.white,
+                            ),
+                            tooltip: "Doğum Tarihlerini Otomatik Yükle",
+                            onPressed: () => topluDogumTarihiYukle(),
+                          ),*/
                         ],
                       ),
                     ],
@@ -704,5 +969,29 @@ class _StudentListScreenState extends State<StudentListScreen> {
         ),
       ),
     );
+  }
+
+  int dogumGununeKalanGunHesapla(String dogumTarihiStr) {
+    try {
+      List<String> parcalar = dogumTarihiStr.split('.');
+      if (parcalar.length != 3) return 999;
+      int gun = int.parse(parcalar[0]);
+      int ay = int.parse(parcalar[1]);
+
+      DateTime simdi = DateTime.now();
+      DateTime buYilDogumGunu = DateTime(simdi.year, ay, gun);
+
+      if (buYilDogumGunu.isBefore(
+        DateTime(simdi.year, simdi.month, simdi.day),
+      )) {
+        buYilDogumGunu = DateTime(simdi.year + 1, ay, gun);
+      }
+
+      return buYilDogumGunu
+          .difference(DateTime(simdi.year, simdi.month, simdi.day))
+          .inDays;
+    } catch (e) {
+      return 999;
+    }
   }
 }

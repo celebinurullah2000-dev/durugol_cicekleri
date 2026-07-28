@@ -1,8 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:durugol_cicekleri/Dogum_Gunleri_Screen.dart';
+import 'package:durugol_cicekleri/Kisisel_Atasozleri_Screen.dart';
+import 'package:durugol_cicekleri/Kisisel_Deyimler_Screen.dart';
+import 'package:durugol_cicekleri/Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
 import 'nobetci_screen.dart';
 import 'Ogrenci_Oturma_Duzeni_Screen.dart';
 import 'Ogrenci_Gorevli_Goruntuleme_Screen.dart';
+import 'Ogrenci_Haftalik_Ders_Programi_Screen.dart';
 
 class OgrenciDevamsizlikScreen extends StatelessWidget {
   final String classId;
@@ -11,7 +16,7 @@ class OgrenciDevamsizlikScreen extends StatelessWidget {
   const OgrenciDevamsizlikScreen({
     super.key,
     required this.classId,
-    required this.studentId,
+    this.studentId = '',
   });
 
   @override
@@ -202,21 +207,43 @@ class CesitliIslerScreen extends StatefulWidget {
 }
 
 class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
-  // İstediğiniz sıralamayla buton başlıkları
-  final List<String> _menuItems = [
-    "Nöbetçi",
-    "Görevli",
-    "Oturma Düzeni",
-    "Doğum Günleri",
-    "Devamsızlık",
-    "Ders Programı",
-    "Etkinlikler",
-    "Yarışmalar",
-    "Sözlük",
-    "Atasözleri",
-    "Deyimler",
-    "Ritmik saymalar",
-    "Çarpım Tablosu",
+  // Menü öğelerini ikon ve renkleriyle birlikte tanımlıyoruz
+  final List<Map<String, dynamic>> _menuItems = [
+    {
+      "title": "Nöbetçi",
+      "icon": Icons.group_work,
+      "color": Colors.green.shade700,
+    },
+    {"title": "Görevli", "icon": Icons.how_to_vote, "color": Colors.indigo},
+    {
+      "title": "Oturma Düzeni",
+      "icon": Icons.grid_view,
+      "color": Colors.indigo.shade700,
+    },
+    {"title": "Doğum Günleri", "icon": Icons.cake, "color": Colors.pink},
+    {"title": "Devamsızlık", "icon": Icons.fact_check, "color": Colors.teal},
+    {
+      "title": "Ders Programı",
+      "icon": Icons.schedule,
+      "color": Colors.deepPurple,
+    },
+    {"title": "Etkinlikler", "icon": Icons.event, "color": Colors.orange},
+    {
+      "title": "Yarışmalar",
+      "icon": Icons.emoji_events,
+      "color": Colors.amber.shade800,
+    },
+    {"title": "Sözlük", "icon": Icons.menu_book, "color": Colors.brown},
+    {
+      "title": "Atasözleri",
+      "icon": Icons.history_edu,
+      "color": Colors.blueGrey,
+    },
+    {
+      "title": "Deyimler",
+      "icon": Icons.library_books,
+      "color": Colors.deepOrange,
+    },
   ];
 
   int _selectedIndex = 0; // Aktif seçili olan butonun indeksini tutar
@@ -227,88 +254,177 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
       appBar: AppBar(title: const Text("Çeşitli İşler")),
       body: Column(
         children: [
-          // 2 Satırlık, kaydırılabilir veya sabit üst menü alanı
+          // 2 Satırlık, öğretmen panelindekine benzer yatay kaydırılabilir alan
           Container(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            color: Colors.indigo.shade50,
             child: SizedBox(
-              height: 110, // 2 satırın sığması için yüksekliği biraz artırdık
+              height: 165, // 2 satırlık buton yapısının sığması için yükseklik
               child: GridView.builder(
-                scrollDirection:
-                    Axis.horizontal, // Yatay kaydırılabilir 2 satır için
+                scrollDirection: Axis.horizontal, // Yatay kaydırma
                 physics: const BouncingScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // Tam 2 satır olacak
-                  mainAxisSpacing: 8, // Butonlar arası dikey boşluk
-                  crossAxisSpacing: 8, // Butonlar arası yatay boşluk
-                  childAspectRatio: 0.35, // Butonların uzunluk/genişlik oranı
+                  crossAxisCount: 2, // Tam 2 satır
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  childAspectRatio:
+                      0.72, // Öğretmen panelindeki buton oranına benzer boyut
                 ),
                 itemCount: _menuItems.length,
                 itemBuilder: (context, index) {
+                  final item = _menuItems[index];
+                  final String title = item['title'];
+                  final IconData icon = item['icon'];
+                  final Color color = item['color'];
                   final bool isSelected = _selectedIndex == index;
-                  return ChoiceChip(
-                    label: Text(_menuItems[index]),
-                    selected: isSelected,
-                    selectedColor: Colors.indigo,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black87,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedIndex = index;
+
+                          if (title == "Nöbetçi") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NobetciScreen(
+                                  studentId: widget.studentId,
+                                  classId: widget.classId,
+                                  isTeacher:
+                                      false, // Öğrenci yetkisi (salt okunur)
+                                ),
+                              ),
+                            );
+                          } else if (title == "Oturma Düzeni") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OgrenciOturmaDuzeniScreen(
+                                  classId: widget.classId,
+                                ),
+                              ),
+                            );
+                          } else if (title == "Deyimler") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => KisiselDeyimlerScreen(
+                                  classId: widget.classId,
+                                  isTeacher: false,
+                                ),
+                              ),
+                            );
+                          } else if (title == "Atasözleri") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => KisiselAtasozleriScreen(
+                                  classId: widget.classId,
+                                  isTeacher: false,
+                                ),
+                              ),
+                            );
+                          } else if (title == "Doğum Günleri") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    DogumGunleriScreen(classId: widget.classId),
+                              ),
+                            );
+                          } else if (title == "Devamsızlık") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OgrenciDevamsizlikScreen(
+                                  classId: widget.classId,
+                                  studentId: widget.studentId,
+                                ),
+                              ),
+                            );
+                          } else if (title == "Görevli") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    OgrenciGorevliGoruntulemeScreen(
+                                      classId: widget.classId,
+                                      studentId: widget.studentId,
+                                    ),
+                              ),
+                            );
+                          } else if (title == "Ders Programı") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    OgrenciHaftalikDersProgramiScreen(
+                                      classId: widget.classId,
+                                    ),
+                              ),
+                            );
+                          } else if (title == "Sözlük") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => KisiselSozlukScreen(
+                                  classId: widget.classId,
+                                  isTeacher: false,
+                                ),
+                              ),
+                            );
+                          }
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 95,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 6,
+                          horizontal: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.indigo.shade50
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.indigo
+                                : color.withValues(alpha: 0.3),
+                            width: isSelected ? 2.0 : 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(icon, color: color, size: 24),
+                            const SizedBox(height: 4),
+                            Text(
+                              title,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey.shade800,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    backgroundColor: Colors.grey.shade200,
-                    onSelected: (bool selected) {
-                      setState(() {
-                        _selectedIndex = index;
-
-                        if (_menuItems[_selectedIndex] == "Nöbetçi") {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => NobetciScreen(
-                                studentId: widget.studentId,
-                                classId: widget.classId,
-                                isTeacher:
-                                    false, // Öğrenci yetkisi (salt okunur)
-                              ),
-                            ),
-                          );
-                        }
-
-                        if (_menuItems[_selectedIndex] == "Oturma Düzeni") {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OgrenciOturmaDuzeniScreen(
-                                classId: widget.classId,
-                              ),
-                            ),
-                          );
-                        }
-
-                        if (_menuItems[_selectedIndex] == "Devamsızlık") {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => OgrenciDevamsizlikScreen(
-                                classId: widget.classId,
-                                studentId: widget.studentId,
-                              ),
-                            ),
-                          );
-                        }
-                        if (_menuItems[_selectedIndex] == "Görevli") {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  OgrenciGorevliGoruntulemeScreen(
-                                    classId: widget.classId,
-                                    studentId: widget.studentId,
-                                  ),
-                            ),
-                          );
-                        }
-                      });
-                    },
                   );
                 },
               ),
@@ -322,7 +438,7 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  "${_menuItems[_selectedIndex]} içeriği burada yer alacak.",
+                  "${_menuItems[_selectedIndex]['title']} içeriği burada yer alacak.",
                   style: const TextStyle(
                     fontSize: 18,
                     color: Colors.grey,

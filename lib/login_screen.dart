@@ -16,6 +16,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isRoleSelected = false; // Başlangıçta butonlar görünecek
+  bool _sifreGizli = true;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,11 +110,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _sifreGizli, // <-- Değişkene bağlandı
                     textAlign: TextAlign.center,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: "Şifrenizi yazın",
+                      // <-- Göz ikonu eklendi
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _sifreGizli ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _sifreGizli = !_sifreGizli;
+                          });
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -139,7 +152,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // 3. GERİ DÖN BUTONU (Arka plan resimli)
                 InkWell(
-                  onTap: () => setState(() => _isRoleSelected = false),
+                  onTap: () => setState(() {
+                    _isRoleSelected = false;
+                    _passwordController.clear();
+                    _sifreGizli = true;
+                  }),
                   child: Container(
                     width: 200,
                     height: 80,

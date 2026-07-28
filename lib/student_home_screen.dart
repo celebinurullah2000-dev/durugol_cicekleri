@@ -6,6 +6,7 @@ import 'OkudugumKitaplarScreen.dart';
 import 'odevlerim_screen.dart';
 import 'cesitli_isler_screen.dart';
 import 'oyunlar_menu_screen.dart';
+import 'Dogum_Gunleri_Screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   final String studentId;
@@ -23,6 +24,95 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   void initState() {
     super.initState();
     _loadStudentData(); // Hem ismi hem de sınıf ID'sini yüklüyoruz
+  }
+
+  void dogumGunuKontrolEtVeBildir(BuildContext context, String classId) async {
+    try {
+      var snapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .where('classId', isEqualTo: classId)
+          .get();
+
+      for (var doc in snapshot.docs) {
+        var data = doc.data();
+        String dogumTarihi = data['dogumTarihi'] ?? '';
+        int kalanGun = dogumGununeKalanGunHesapla(dogumTarihi);
+
+        // Doğum gününe 3 gün veya daha az kaldıysa (0 gün dahil)
+        if (kalanGun >= 0 && kalanGun <= 3) {
+          String adSoyad =
+              data['adSoyad'] ??
+              "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}";
+
+          // Bildirimin ard arda patlamaması için veya her açılışta göstermek istiyorsanız:
+          if (!context.mounted) return;
+
+          _dogumGunuDialogGoster(context, adSoyad, kalanGun);
+          break; // Birden fazla varsa önce yaklaşanı gösterip dönebiliriz
+        }
+      }
+    } catch (e) {
+      // Hata yönetimi sessiz geçilebilir
+    }
+  }
+
+  int dogumGununeKalanGunHesapla(String dogumTarihiStr) {
+    try {
+      List<String> parcalar = dogumTarihiStr.split('.');
+      if (parcalar.length != 3) return 999;
+      int gun = int.parse(parcalar[0]);
+      int ay = int.parse(parcalar[1]);
+
+      DateTime simdi = DateTime.now();
+      DateTime buYilDogumGunu = DateTime(simdi.year, ay, gun);
+
+      if (buYilDogumGunu.isBefore(
+        DateTime(simdi.year, simdi.month, simdi.day),
+      )) {
+        buYilDogumGunu = DateTime(simdi.year + 1, ay, gun);
+      }
+
+      return buYilDogumGunu
+          .difference(DateTime(simdi.year, simdi.month, simdi.day))
+          .inDays;
+    } catch (e) {
+      return 999;
+    }
+  }
+
+  void _dogumGunuDialogGoster(
+    BuildContext context,
+    String ogrenciAdi,
+    int kalanGun,
+  ) {
+    String mesaj = kalanGun == 0
+        ? "Bugün $ogrenciAdi adlı arkadaşımızın doğum günü! 🎂 Birlikte nice mutlu yıllara dileyelim! 🎉"
+        : "$ogrenciAdi adlı arkadaşımızın doğum gününe $kalanGun gün kaldı! 🎈 Şimdiden hazırlıklara başlayalım! 🎁";
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: const [
+            Icon(Icons.celebration, color: Colors.pink, size: 30),
+            SizedBox(width: 10),
+            Text("Doğum Günü Var!"),
+          ],
+        ),
+        content: Text(mesaj, style: const TextStyle(fontSize: 16)),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.pink,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Harika!"),
+          ),
+        ],
+      ),
+    );
   }
 
   // Öğrenci bilgilerini SharedPreferences ve Firestore'dan yükleme
@@ -54,50 +144,131 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     setState(() {
       studentName = isim.isNotEmpty ? isim : "Öğrenci";
       classId = cId; // Sınıf ID değişkenimizi dolduruyoruz
+
+      if (cId.isNotEmpty && mounted) {
+        dogumGunuKontrolEtVeBildir(context, cId);
+      }
     });
   }
 
   // Öğrencinin Kendi Şifresini Değiştirme Fonksiyonu
   void _ogrenciSifreDegistir(BuildContext context) {
     final TextEditingController yeniSifreController = TextEditingController();
+    final TextEditingController yeniSifreTekrarController =
+        TextEditingController();
+
+    bool yeniSifreGizli = true;
+    bool yeniSifreTekrarGizli = true;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Şifremi Değiştir"),
-        content: TextField(
-          controller: yeniSifreController,
-          decoration: const InputDecoration(
-            labelText: "Yeni Şifre",
-            prefixIcon: Icon(Icons.lock),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          obscureText: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("İptal"),
+          title: const Text("Şifremi Değiştir"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Yeni Şifre Kutusu
+                TextField(
+                  controller: yeniSifreController,
+                  obscureText: yeniSifreGizli,
+                  decoration: InputDecoration(
+                    labelText: "Yeni Şifre",
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        yeniSifreGizli
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setStateDialog(() {
+                          yeniSifreGizli = !yeniSifreGizli;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 2. Yeni Şifre (Tekrar) Kutusu
+                TextField(
+                  controller: yeniSifreTekrarController,
+                  obscureText: yeniSifreTekrarGizli,
+                  decoration: InputDecoration(
+                    labelText: "Yeni Şifre (Tekrar)",
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        yeniSifreTekrarGizli
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setStateDialog(() {
+                          yeniSifreTekrarGizli = !yeniSifreTekrarGizli;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (yeniSifreController.text.isNotEmpty) {
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("İptal"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                String sifre1 = yeniSifreController.text.trim();
+                String sifre2 = yeniSifreTekrarController.text.trim();
+
+                if (sifre1.isEmpty || sifre2.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Lütfen tüm alanları doldurun."),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                  return;
+                }
+
+                if (sifre1 != sifre2) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        "Girdiğiniz şifreler birbiriyle uyuşmuyor!",
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 FirebaseFirestore.instance
                     .collection('students')
                     .doc(widget.studentId)
-                    .update({'password': yeniSifreController.text});
+                    .update({'password': sifre1});
 
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text("Şifreniz başarıyla güncellendi."),
+                    backgroundColor: Colors.green,
                   ),
                 );
-              }
-            },
-            child: const Text("Güncelle"),
-          ),
-        ],
+              },
+              child: const Text("Güncelle"),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -120,6 +291,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       appBar: AppBar(
         title: Text("Merhaba, $studentName"),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.cake, color: Colors.pink),
+            tooltip: "Sınıf Doğum Günleri",
+            onPressed: () {
+              if (classId.isEmpty) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DogumGunleriScreen(classId: classId),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(
               Icons.vpn_key,

@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => StudentListScreen(
+                        builder: (_) => OgretmenAnaSayfasi(
                           classId: classId,
                           className: className,
                         ),
