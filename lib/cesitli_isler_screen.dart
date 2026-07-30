@@ -1,13 +1,18 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:durugol_cicekleri/Dogum_Gunleri_Screen.dart';
 import 'package:durugol_cicekleri/Kisisel_Atasozleri_Screen.dart';
 import 'package:durugol_cicekleri/Kisisel_Deyimler_Screen.dart';
 import 'package:durugol_cicekleri/Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart'; // Lottie paketi eklendi
 import 'nobetci_screen.dart';
 import 'Ogrenci_Oturma_Duzeni_Screen.dart';
 import 'Ogrenci_Gorevli_Goruntuleme_Screen.dart';
 import 'Ogrenci_Haftalik_Ders_Programi_Screen.dart';
+import 'Ogrenci_Etkinlikler_Screen.dart';
+import 'Ogrenci_Yarismalar_Screen.dart';
 
 class OgrenciDevamsizlikScreen extends StatelessWidget {
   final String classId;
@@ -375,6 +380,26 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
                                 ),
                               ),
                             );
+                          } else if (title == "Etkinlikler") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OgrenciEtkinliklerScreen(
+                                  classId: widget.classId,
+                                  studentId: widget.studentId,
+                                ),
+                              ),
+                            );
+                          } else if (title == "Yarışmalar") {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OgrenciYarismalarScreen(
+                                  classId: widget.classId,
+                                  studentId: widget.studentId,
+                                ),
+                              ),
+                            );
                           }
                         });
                       },
@@ -432,19 +457,60 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
           ),
           const Divider(height: 1),
 
-          // Seçilen sekmeye göre değişecek içerik alanı
+          // Lottie Animasyonunun Yerleştirildiği Alan
           Expanded(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "${_menuItems[_selectedIndex]['title']} içeriği burada yer alacak.",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.indigo.shade50, // Üst kısımda hafif bir indigo tonu
+                    Colors.white, // Alt kısma doğru saf beyaza geçiş
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 16),
+                      Text(
+                        "Yukarıdaki menüden işlemlerinizi seçebilirsiniz.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 25,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 500,
+                        height: 500,
+                        child: Lottie.asset(
+                          'assets/animations/Summer Camp Animations - School Bus.json',
+                          fit: BoxFit.fill,
+                          repeat: true,
+                          reverse: true,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Text(
+                                "Animasyon yüklenemedi:\n$error",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
             ),

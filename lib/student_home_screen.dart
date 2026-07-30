@@ -1,3 +1,4 @@
+import 'package:durugol_cicekleri/Ogrenci_Davranis_Screen.dart';
 import 'package:flutter/material.dart'; // Scaffold, AppBar, Text vb. temel widgetlar için
 import 'package:shared_preferences/shared_preferences.dart'; // Çıkış yaparken oturumu silmek için
 import 'login_screen.dart'; // Çıkış yapınca tekrar giriş ekranına dönmek için
@@ -7,6 +8,8 @@ import 'odevlerim_screen.dart';
 import 'cesitli_isler_screen.dart';
 import 'oyunlar_menu_screen.dart';
 import 'Dogum_Gunleri_Screen.dart';
+import 'Ogrenci_Denemeler_Screen.dart';
+import 'package:lottie/lottie.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   final String studentId;
@@ -279,10 +282,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final List<Map<String, String>> menuItems = [
       {'title': 'Okuduğum Kitaplar', 'image': 'assets/images/kitaplarim.png'},
       {'title': 'Ödevlerim', 'image': 'assets/images/odevlerim.png'},
-      {'title': 'Projelerim', 'image': 'assets/images/projelerim.png'},
+      /*{'title': 'Projelerim', 'image': 'assets/images/projelerim.png'},*/
       {'title': 'Davranışlarım', 'image': 'assets/images/davranislarim.png'},
       {'title': 'Denemelerim', 'image': 'assets/images/testlerim.png'},
-      {'title': 'Kurslarım', 'image': 'assets/images/kurslarim.png'},
+      /*{'title': 'Kurslarım', 'image': 'assets/images/kurslarim.png'},*/
       {'title': 'Çeşitli İşler', 'image': 'assets/images/cesitli_isler.png'},
       {'title': 'Oyunlar', 'image': 'assets/images/oyunlar.png'},
     ];
@@ -292,7 +295,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         title: Text("Merhaba, $studentName"),
         actions: [
           IconButton(
-            icon: const Icon(Icons.cake, color: Colors.pink),
+            icon: const Icon(Icons.cake, color: Colors.pink, size: 40),
             tooltip: "Sınıf Doğum Günleri",
             onPressed: () {
               if (classId.isEmpty) return;
@@ -308,12 +311,17 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             icon: const Icon(
               Icons.vpn_key,
               color: Colors.indigo,
+              size: 40,
             ), // Şifre değiştirme ikonu
             tooltip: "Şifremi Değiştir",
             onPressed: () => _ogrenciSifreDegistir(context),
           ),
           IconButton(
-            icon: const Icon(Icons.exit_to_app),
+            icon: const Icon(
+              Icons.exit_to_app,
+              color: Colors.deepOrange,
+              size: 40,
+            ),
             onPressed: () async {
               final prefs = await SharedPreferences.getInstance();
               await prefs.clear(); // Oturumu tamamen siler
@@ -330,125 +338,166 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: GridView.builder(
-          itemCount: menuItems.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // Yan yana 2 buton
-            crossAxisSpacing: 14, // Yatay boşluk
-            mainAxisSpacing: 14, // Dikey boşluk
-            childAspectRatio:
-                1.35, // Genişliği yüksekliğine göre daha fazla yaparak boşlukları yok ettik
-          ),
-          itemBuilder: (context, index) {
-            return Card(
-              elevation: 2,
-              shadowColor: Colors.indigo.withValues(alpha: 0.2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+        child: Column(
+          children: [
+            // Üst kısım: Menü Kartları (Grid)
+            GridView.builder(
+              itemCount: menuItems.length,
+              shrinkWrap:
+                  true, // Grid'in sadece kapladığı kadar yer tutmasını sağlar
+              physics:
+                  const NeverScrollableScrollPhysics(), // Tüm sayfanın kaydırılması için iç scroll'u kapatıyoruz
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 20,
+                mainAxisSpacing: 20,
+                childAspectRatio: 1.5,
               ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: () {
-                  if (menuItems[index]['title'] == 'Okuduğum Kitaplar') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            OkudugumKitaplarScreen(studentId: widget.studentId),
-                      ),
-                    );
-                  } else if (menuItems[index]['title'] == 'Ödevlerim') {
-                    if (classId.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            "Sınıf bilgisi yükleniyor, lütfen tekrar deneyin.",
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OdevlerimScreen(
-                          studentId: widget.studentId,
-                          classId: classId,
-                        ),
-                      ),
-                    );
-                  } else if (menuItems[index]['title'] == 'Çeşitli İşler') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CesitliIslerScreen(
-                          studentId: widget.studentId,
-                          classId: classId,
-                        ),
-                      ),
-                    );
-                  } else if (menuItems[index]['title'] == 'Oyunlar') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OyunlarMenuScreen(
-                          studentId: widget.studentId,
-                          classId: classId,
-                        ),
-                      ),
-                    );
-                  } else {
-                    // Diğer sayfalar için henüz bir şey yapmadık,
-                    // buraya "Yakında eklenecek" gibi bir uyarı veya ScaffoldMessenger ekleyebilirsiniz.
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          "${menuItems[index]['title']} bölümü yapım aşamasında!",
-                        ),
-                      ),
-                    );
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center, // İçeriği tam merkeze alır
-                    children: [
-                      Expanded(
-                        // Resmin kartın genişliğine göre büyümesini sağlar
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            top: 15.0,
-                          ), // Üstten biraz boşluk
-                          child: Image.asset(
-                            menuItems[index]['image']!,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 15.0,
-                        ), // Yazının alttan boşluğu
-                        child: Text(
-                          menuItems[index]['title']!,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16, // Yazıyı da biraz büyüttük
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
+              itemBuilder: (context, index) {
+                return Card(
+                  elevation: 2,
+                  shadowColor: Colors.indigo.withValues(alpha: 0.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
                   ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () {
+                      if (menuItems[index]['title'] == 'Okuduğum Kitaplar') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OkudugumKitaplarScreen(
+                              studentId: widget.studentId,
+                            ),
+                          ),
+                        );
+                      } else if (menuItems[index]['title'] == 'Ödevlerim') {
+                        if (classId.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Sınıf bilgisi yükleniyor, lütfen tekrar deneyin.",
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OdevlerimScreen(
+                              studentId: widget.studentId,
+                              classId: classId,
+                            ),
+                          ),
+                        );
+                      } else if (menuItems[index]['title'] == 'Çeşitli İşler') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CesitliIslerScreen(
+                              studentId: widget.studentId,
+                              classId: classId,
+                            ),
+                          ),
+                        );
+                      } else if (menuItems[index]['title'] == 'Davranışlarım') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OgrenciDavranisScreen(
+                              studentId: widget.studentId,
+                              classId: classId,
+                            ),
+                          ),
+                        );
+                      } else if (menuItems[index]['title'] == 'Denemelerim') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OgrenciDenemelerScreen(
+                              studentId: widget.studentId,
+                              classId: classId,
+                            ),
+                          ),
+                        );
+                      } else if (menuItems[index]['title'] == 'Oyunlar') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OyunlarMenuScreen(
+                              studentId: widget.studentId,
+                              classId: classId,
+                            ),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "${menuItems[index]['title']} bölümü yapım aşamasında!",
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 15.0),
+                              child: Image.asset(
+                                menuItems[index]['image']!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 15.0),
+                            child: Text(
+                              menuItems[index]['title']!,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            // Kartların hemen altında ortalanmış Lottie Animasyonu
+            Center(
+              child: SizedBox(
+                width: 300,
+                height: 300,
+                child: Lottie.asset(
+                  'assets/animations/Welcome_Animation.json',
+                  height: 300,
+                  width: 300,
+                  fit: BoxFit.contain,
+                  repeat: true,
+                  reverse: true,
                 ),
               ),
-            );
-          },
+            ),
+
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

@@ -1,3 +1,5 @@
+import 'package:durugol_cicekleri/Etkinlikler_Screen.dart';
+
 import 'Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,6 +19,9 @@ import 'Dogum_Gunleri_Screen.dart';
 import 'Haftalik_Ders_Programi_Screen.dart';
 import 'Kisisel_Deyimler_Screen.dart';
 import 'Kisisel_Atasozleri_Screen.dart';
+import 'Yarismalar_Screen.dart';
+import 'Denemeler_Screen.dart';
+import 'Ogretmen_Davranis_Screen.dart';
 
 Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   String classId,
@@ -687,7 +692,7 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                           _buildHizliIslemButonu(
                             icon: Icons.library_books,
                             label: "Sözlük",
-                            color: Colors.teal,
+                            color: Colors.deepOrange,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -716,12 +721,45 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                               );
                             },
                           ),
+
+                          _buildHizliIslemButonu(
+                            icon: Icons.auto_stories,
+                            label: "Yarışmalar",
+                            color: Colors.purpleAccent,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => YarismalarScreen(
+                                    classId: widget.classId,
+                                    isTeacher:
+                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          // Eski "Nöbetçi Öğrenci" düğmesi kaldırıldı ve yukarı taşındı.
+                          _buildHizliIslemButonu(
+                            icon: Icons.edit_note,
+                            label: "Denemeler",
+                            color: Colors.indigo,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DenemelerScreen(
+                                    classId: widget.classId,
+                                    className: widget.className,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                           _buildHizliIslemButonu(
                             icon: Icons.menu_book,
                             label: "Kitap ve Ödev",
@@ -772,7 +810,7 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                           _buildHizliIslemButonu(
                             icon: Icons.schedule,
                             label: "Ders Programı",
-                            color: Colors.deepPurple,
+                            color: Colors.lightBlue,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -789,12 +827,46 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                           _buildHizliIslemButonu(
                             icon: Icons.auto_stories,
                             label: "Deyimler",
-                            color: Colors.deepPurple,
+                            color: Colors.deepOrange,
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => KisiselDeyimlerScreen(
+                                    classId: widget.classId,
+                                    isTeacher:
+                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.auto_stories,
+                            label: "Etkinlikler",
+                            color: Colors.pinkAccent,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EtkinliklerScreen(
+                                    classId: widget.classId,
+                                    isTeacher:
+                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildHizliIslemButonu(
+                            icon: Icons.auto_stories,
+                            label: "Davranışlar",
+                            color: Colors.pinkAccent,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => OgretmenDavranisScreen(
                                     classId: widget.classId,
                                     isTeacher:
                                         true, // Öğretmen yetkisiyle açılır (düzenlenebilir)

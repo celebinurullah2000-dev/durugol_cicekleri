@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'utils.dart';
+import 'package:lottie/lottie.dart';
 
 class OkudugumKitaplarScreen extends StatefulWidget {
   final String studentId;
@@ -135,15 +136,24 @@ class _OkudugumKitaplarScreenState extends State<OkudugumKitaplarScreen> {
             toplamSayfa += (doc['sayfaSayisi'] as num).toInt();
           }
 
-          // Ünvan mantığı (Örnek: 500 sayfadan fazla okuyan "Kitap Kurdu" olsun)
           String mevcutOdul = Oyunlastirma.getOdul(toplamSayfa);
           String mevcutUnvan = Oyunlastirma.getUnvan(toplamSayfa);
 
           return Column(
             children: [
-              // DİNAMİK ÖZET KARTI
+              // 1. LOTTIE ANİMASYONU (Buraya ekledik)
+              SizedBox(
+                height: 120,
+                child: Lottie.asset(
+                  'assets/animations/story icon.json',
+                  fit: BoxFit.contain,
+                  repeat: true,
+                ),
+              ),
+
+              // 2. DİNAMİK ÖZET KARTI
               Container(
-                margin: const EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.indigo.shade50,
@@ -159,16 +169,17 @@ class _OkudugumKitaplarScreenState extends State<OkudugumKitaplarScreen> {
                   ],
                 ),
               ),
-              // 2. KİTAP EKLEME ALANI
+              const SizedBox(height: 10),
+
+              // 3. KİTAP EKLEME ALANI
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
-                        controller: _kitapAdiController, // İsim düzeltildi
-                        textCapitalization: TextCapitalization
-                            .characters, // OTOMATİK BÜYÜK HARF
+                        controller: _kitapAdiController,
+                        textCapitalization: TextCapitalization.characters,
                         decoration: const InputDecoration(
                           labelText: "Kitap Adı",
                         ),
@@ -178,12 +189,12 @@ class _OkudugumKitaplarScreenState extends State<OkudugumKitaplarScreen> {
                     SizedBox(
                       width: 80,
                       child: TextField(
-                        controller: _sayfaSayisiController, // İsim düzeltildi
+                        controller: _sayfaSayisiController,
                         decoration: const InputDecoration(labelText: "Sayfa"),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
-                        ], // SADECE RAKAM
+                        ],
                       ),
                     ),
                     IconButton(
@@ -192,18 +203,19 @@ class _OkudugumKitaplarScreenState extends State<OkudugumKitaplarScreen> {
                         color: Colors.indigo,
                         size: 30,
                       ),
-                      onPressed: _kitapEkle, // Fonksiyon buraya bağlandı
+                      onPressed: _kitapEkle,
                     ),
                   ],
                 ),
               ),
-              // LİSTELEME
+              const SizedBox(height: 10),
+
+              // 4. LİSTELEME
               Expanded(
                 child: ListView.builder(
                   itemCount: toplamKitap,
                   itemBuilder: (context, index) {
                     var doc = docs[index];
-                    // Tarihi formatla
                     DateTime tarih = (doc['tarih'] as Timestamp).toDate();
                     String tarihStr =
                         "${tarih.day}.${tarih.month}.${tarih.year}";
@@ -212,16 +224,12 @@ class _OkudugumKitaplarScreenState extends State<OkudugumKitaplarScreen> {
                       title: Text(doc['kitapAdi']),
                       subtitle: Text(tarihStr),
                       trailing: Row(
-                        mainAxisSize:
-                            MainAxisSize.min, // Row'un kapladığı alanı kısıtlar
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text("${doc['sayfaSayisi']} S."),
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.indigo),
-                            onPressed: () => _kitapDuzenle(
-                              context,
-                              doc,
-                            ), // Düzenleme fonksiyonu
+                            onPressed: () => _kitapDuzenle(context, doc),
                           ),
                         ],
                       ),
@@ -236,7 +244,6 @@ class _OkudugumKitaplarScreenState extends State<OkudugumKitaplarScreen> {
     );
   }
 
-  // Yardımcı widget: Kodun daha temiz durması için
   Widget _ozetBilgi(String baslik, String deger) {
     return Column(
       children: [
