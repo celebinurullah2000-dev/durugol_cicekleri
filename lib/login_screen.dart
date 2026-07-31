@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // FirebaseFirestore hatası için
 import 'student_home_screen.dart'; // StudentHomeScreen hatası için
-import 'teacher_auth_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -68,14 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: _buildRoleButton(
                         "",
                         "assets/images/ogretmen.png",
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const TeacherAuthScreen(),
-                            ),
-                          );
-                        },
+                        () => setState(() => _isRoleSelected = true),
                       ),
                     ),
                     const SizedBox(width: 20), // İki buton arası boşluk
