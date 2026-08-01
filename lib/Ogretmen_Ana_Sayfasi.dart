@@ -22,6 +22,7 @@ import 'Kisisel_Atasozleri_Screen.dart';
 import 'Yarismalar_Screen.dart';
 import 'Denemeler_Screen.dart';
 import 'Ogretmen_Davranis_Screen.dart';
+import 'etutler_screen.dart';
 
 Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   String classId,
@@ -240,6 +241,85 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
   void _sil(BuildContext context, String studentId) {
     FirebaseFirestore.instance.collection('students').doc(studentId).delete();
     setState(() {});
+  }
+
+  // --- SÖZLÜK & DİL ARAÇLARI SEÇENEKLERİ MENÜSÜ ---
+  void _showSozlukSecenekleri(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Sözlük ve Dil Araçları",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(
+                  Icons.library_books,
+                  color: Colors.deepOrange,
+                ),
+                title: const Text("1: Sözlük"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => KisiselSozlukScreen(
+                        classId: widget.classId,
+                        isTeacher: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.history_edu, color: Colors.teal),
+                title: const Text("2: Atasözleri"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => KisiselAtasozleriScreen(
+                        classId: widget.classId,
+                        isTeacher: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.auto_stories,
+                  color: Colors.deepOrange,
+                ),
+                title: const Text("3: Deyimler"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => KisiselDeyimlerScreen(
+                        classId: widget.classId,
+                        isTeacher: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // --- NÖBETÇİ & GÖREVLİ SEÇENEKLERİ MENÜSÜ ---
@@ -635,258 +715,274 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
             color: Colors.indigo.shade50,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
+                  // ==========================================
+                  // 1. SATIR BAŞLANGICI
+                  // ==========================================
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          // --- İSTEDİĞİNİZ YERE "NÖBETÇİ & GÖREVLİ" BUTONU EKLENDİ ---
-                          _buildHizliIslemButonu(
-                            icon: Icons.group_work,
-                            label: "Nöbetçi & Görevli",
-                            color: Colors.green.shade700,
-                            onTap: () {
-                              _showNobetciVeGorevliSecenekleri(context);
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.fact_check,
-                            label: "İş Takibi",
-                            color: Colors.teal,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SinifIsTakipScreen(
-                                    classId: widget.classId,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.assignment,
-                            label: "Ödev İşlemleri",
-                            color: Colors.indigo,
-                            onTap: () {
-                              _showOdevIslemleriSecenekleri(context);
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.cake,
-                            label: "Doğum Günleri",
-                            color: Colors.pink,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DogumGunleriScreen(
-                                    classId: widget.classId,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.library_books,
-                            label: "Sözlük",
-                            color: Colors.deepOrange,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => KisiselSozlukScreen(
-                                    classId: widget.classId,
-                                    isTeacher: true,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.history_edu,
-                            label: "Atasözleri",
-                            color: Colors.teal,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => KisiselAtasozleriScreen(
-                                    classId: widget.classId,
-                                    isTeacher: true,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-
-                          _buildHizliIslemButonu(
-                            icon: Icons.auto_stories,
-                            label: "Yarışmalar",
-                            color: Colors.purpleAccent,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => YarismalarScreen(
-                                    classId: widget.classId,
-                                    isTeacher:
-                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                      _buildHizliIslemButonu(
+                        icon: Icons.group_work,
+                        label: "Nöbetçi & Görevli",
+                        color: Colors.green.shade700,
+                        onTap: () {
+                          _showNobetciVeGorevliSecenekleri(context);
+                        },
                       ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          _buildHizliIslemButonu(
-                            icon: Icons.edit_note,
-                            label: "Denemeler",
-                            color: Colors.indigo,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DenemelerScreen(
-                                    classId: widget.classId,
-                                    className: widget.className,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.menu_book,
-                            label: "Kitap ve Ödev",
-                            color: Colors.brown,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => KitapOkumaTakipScreen(
-                                    classId: widget.classId,
-                                    className: widget.className,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.grid_view,
-                            label: "Oturma Düzeni",
-                            color: Colors.indigo.shade700,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OturmaDuzeniScreen(
-                                    classId: widget.classId,
-                                    isTeacher: true,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.fact_check,
-                            label: "Devamsızlık",
-                            color: Colors.teal,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DevamsizlikScreen(
-                                    classId: widget.classId,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.schedule,
-                            label: "Ders Programı",
-                            color: Colors.lightBlue,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => HaftalikDersProgramiScreen(
-                                    classId: widget.classId,
-                                    isTeacher:
-                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.auto_stories,
-                            label: "Deyimler",
-                            color: Colors.deepOrange,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => KisiselDeyimlerScreen(
-                                    classId: widget.classId,
-                                    isTeacher:
-                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.auto_stories,
-                            label: "Etkinlikler",
-                            color: Colors.pinkAccent,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EtkinliklerScreen(
-                                    classId: widget.classId,
-                                    isTeacher:
-                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildHizliIslemButonu(
-                            icon: Icons.auto_stories,
-                            label: "Davranışlar",
-                            color: Colors.pinkAccent,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OgretmenDavranisScreen(
-                                    classId: widget.classId,
-                                    isTeacher:
-                                        true, // Öğretmen yetkisiyle açılır (düzenlenebilir)
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          /*IconButton(
-                            icon: const Icon(
-                              Icons.cloud_upload,
-                              color: Colors.white,
+                      _buildHizliIslemButonu(
+                        icon: Icons.fact_check,
+                        label: "İş Takibi",
+                        color: Colors.teal,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SinifIsTakipScreen(classId: widget.classId),
                             ),
-                            tooltip: "Doğum Tarihlerini Otomatik Yükle",
-                            onPressed: () => topluDogumTarihiYukle(),
-                          ),*/
-                        ],
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.assignment,
+                        label: "Ödev İşlemleri",
+                        color: Colors.indigo,
+                        onTap: () {
+                          _showOdevIslemleriSecenekleri(context);
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.cake,
+                        label: "Doğum Günleri",
+                        color: Colors.pink,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  DogumGunleriScreen(classId: widget.classId),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.schedule,
+                        label: "Ders Programı",
+                        color: Colors.lightBlue,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HaftalikDersProgramiScreen(
+                                classId: widget.classId,
+                                isTeacher: true,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
+
+                  // ==========================================
+                  // 1. SATIR BİTİŞİ
+                  // ==========================================
+                  const SizedBox(height: 6),
+
+                  // ==========================================
+                  // 2. SATIR BAŞLANGICI
+                  // ==========================================
+                  Row(
+                    children: [
+                      _buildHizliIslemButonu(
+                        icon: Icons.event_available,
+                        label: "Etütler",
+                        color: Colors.deepPurple,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => etutlerscreen(
+                                classId: widget.classId,
+                                className: widget.className,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.edit_note,
+                        label: "Denemeler",
+                        color: Colors.indigo,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DenemelerScreen(
+                                classId: widget.classId,
+                                className: widget.className,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.menu_book,
+                        label: "Kitap ve Ödev",
+                        color: Colors.brown,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => KitapOkumaTakipScreen(
+                                classId: widget.classId,
+                                className: widget.className,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.grid_view,
+                        label: "Oturma Düzeni",
+                        color: Colors.indigo.shade700,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OturmaDuzeniScreen(
+                                classId: widget.classId,
+                                isTeacher: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.fact_check,
+                        label: "Devamsızlık",
+                        color: Colors.teal,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  DevamsizlikScreen(classId: widget.classId),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  // ==========================================
+                  // 2. SATIR BİTİŞİ
+                  // ==========================================
+                  const SizedBox(height: 6),
+
+                  // ==========================================
+                  // 3. SATIR BAŞLANGICI
+                  // ==========================================
+                  Row(
+                    children: [
+                      // --- SÖZLÜK BUTONU (MENÜYÜ AÇAR) ---
+                      _buildHizliIslemButonu(
+                        icon: Icons.library_books,
+                        label: "Sözlük",
+                        color: Colors.deepOrange,
+                        onTap: () {
+                          _showSozlukSecenekleri(context);
+                        },
+                      ),
+
+                      // atasözleri ve deyimler butonları kaldırıldı.
+                      /*_buildHizliIslemButonu(
+                        icon: Icons.history_edu,
+                        label: "Atasözleri",
+                        color: Colors.teal,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => KisiselAtasozleriScreen(
+                                classId: widget.classId,
+                                isTeacher: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.auto_stories,
+                        label: "Deyimler",
+                        color: Colors.deepOrange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => KisiselDeyimlerScreen(
+                                classId: widget.classId,
+                                isTeacher: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),*/
+                      _buildHizliIslemButonu(
+                        icon: Icons.auto_stories,
+                        label: "Etkinlikler",
+                        color: Colors.pinkAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EtkinliklerScreen(
+                                classId: widget.classId,
+                                isTeacher: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.auto_stories,
+                        label: "Davranışlar",
+                        color: Colors.pinkAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OgretmenDavranisScreen(
+                                classId: widget.classId,
+                                isTeacher: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.auto_stories,
+                        label: "Yarışmalar",
+                        color: Colors.purpleAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => YarismalarScreen(
+                                classId: widget.classId,
+                                isTeacher: true,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  // ==========================================
+                  // 3. SATIR BİTİŞİ
+                  // ==========================================
                 ],
               ),
             ),

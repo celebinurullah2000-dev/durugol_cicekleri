@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart'; // <-- Google Sign-In paketi
-import 'home_screen.dart';
+import 'sinif_sec_ekle_screen.dart';
 
 class TeacherAuthScreen extends StatefulWidget {
   const TeacherAuthScreen({super.key});
@@ -71,7 +71,7 @@ class _TeacherAuthScreenState extends State<TeacherAuthScreen> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const sinifseceklescreen()),
         );
       }
     } catch (e) {
@@ -116,7 +116,7 @@ class _TeacherAuthScreenState extends State<TeacherAuthScreen> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const sinifseceklescreen()),
         );
       } else {
         UserCredential userCredential = await FirebaseAuth.instance
@@ -136,7 +136,7 @@ class _TeacherAuthScreenState extends State<TeacherAuthScreen> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const sinifseceklescreen()),
         );
       }
     } on FirebaseAuthException catch (e) {
