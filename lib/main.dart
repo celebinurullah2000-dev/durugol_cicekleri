@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart'; // flutterfire configure ile oluşan dosya
 import 'firestore_service.dart'; // FirestoreService sınıfınızın olduğu dosya
-import 'home_screen.dart'; // Sınıf Listesi ekranınız
+import 'sinif_sec_ekle_screen.dart'; // Sınıf Listesi ekranınız
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 // ignore: unused_import
@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
       title: 'Durugöl Çiçekleri',
       // main.dart içinde MaterialApp'in home kısmı:
       home: initialRole == 'teacher'
-          ? const HomeScreen()
+          ? const sinifseceklescreen()
           : (initialRole == 'student'
                 ? StudentHomeScreen(studentId: studentId ?? '')
                 : const LoginScreen()),

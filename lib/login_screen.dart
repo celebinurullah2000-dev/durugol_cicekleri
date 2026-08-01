@@ -1,8 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:durugol_cicekleri/sinif_sec_ekle_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'home_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // FirebaseFirestore hatası için
 import 'student_home_screen.dart'; // StudentHomeScreen hatası için
 
@@ -273,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => sinifseceklescreen()),
       );
       return;
     }

@@ -260,20 +260,21 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
       body: Column(
         children: [
           // 2 Satırlık, öğretmen panelindekine benzer yatay kaydırılabilir alan
+          // 3 Satırlık, öğretmen panelindekine benzer yatay kaydırılabilir alan
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             color: Colors.indigo.shade50,
             child: SizedBox(
-              height: 165, // 2 satırlık buton yapısının sığması için yükseklik
+              height:
+                  245, // 3 satırlık buton yapısının sığması için yükseklik artırıldı
               child: GridView.builder(
                 scrollDirection: Axis.horizontal, // Yatay kaydırma
                 physics: const BouncingScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // Tam 2 satır
+                  crossAxisCount: 3, // Tam 3 satır yapıldı
                   mainAxisSpacing: 6,
                   crossAxisSpacing: 6,
-                  childAspectRatio:
-                      0.72, // Öğretmen panelindeki buton oranına benzer boyut
+                  childAspectRatio: 0.72,
                 ),
                 itemCount: _menuItems.length,
                 itemBuilder: (context, index) {
@@ -488,13 +489,12 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
                         ),
                       ),
                       SizedBox(
-                        width: 500,
-                        height: 500,
+                        width: 400,
+                        height: 300,
                         child: Lottie.asset(
                           'assets/animations/Summer Camp Animations - School Bus.json',
                           fit: BoxFit.fill,
                           repeat: true,
-                          reverse: true,
                           errorBuilder: (context, error, stackTrace) {
                             return Center(
                               child: Text(
