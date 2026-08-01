@@ -1,3 +1,4 @@
+import 'package:durugol_cicekleri/istatistik_servisi.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -23,6 +24,24 @@ class _OdevlerimScreenState extends State<OdevlerimScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      // Sekme değişimi tamamlandığında (animasyon bittiğinde) çalışması için:
+      if (!_tabController.indexIsChanging) {
+        if (_tabController.index == 0) {
+          // 0. Sekme: Ödevlerim
+          IstatistikServisi.islemKaydet(
+            studentId: widget.studentId,
+            islemTuru: 'odevlerim_sekmesi',
+          );
+        } else if (_tabController.index == 1) {
+          // 1. Sekme: Görevlerim
+          IstatistikServisi.islemKaydet(
+            studentId: widget.studentId,
+            islemTuru: 'gorevlerim_sekmesi',
+          );
+        }
+      }
+    });
   }
 
   @override

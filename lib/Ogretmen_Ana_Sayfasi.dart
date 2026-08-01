@@ -1,5 +1,5 @@
 import 'package:durugol_cicekleri/Etkinlikler_Screen.dart';
-
+import 'package:durugol_cicekleri/Sinif_Istatistik_Siralama_Screen.dart';
 import 'Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,8 +10,7 @@ import 'SinifIsTakipScreen.dart';
 import 'nobetci_screen.dart';
 import 'kitap_okuma_takip_screen.dart';
 import 'student_detail_screen.dart';
-// ignore: unused_import
-import 'ogrenci_yukleme_screen.dart';
+//import 'ogrenci_yukleme_screen.dart'; //geçici import
 import 'oturma_duzeni_screen.dart';
 import 'Devamsizlik_Screen.dart';
 import 'Sinif_Gorevleri_Screen.dart'; // --- EKLENEN SINIF GÖREVLERİ İMPORTU ---
@@ -974,6 +973,22 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                                 classId: widget.classId,
                                 isTeacher: true,
                               ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.auto_stories,
+                        label: "Kullanım İstatistikleri",
+                        color: Colors.purpleAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SinifIstatistikSiralamaScreen(
+                                    classId: widget.classId,
+                                  ),
                             ),
                           );
                         },

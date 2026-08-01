@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:durugol_cicekleri/Ogrenci_Davranis_Screen.dart';
 import 'package:flutter/material.dart'; // Scaffold, AppBar, Text vb. temel widgetlar için
 import 'package:shared_preferences/shared_preferences.dart'; // Çıkış yaparken oturumu silmek için
@@ -10,6 +12,8 @@ import 'oyunlar_menu_screen.dart';
 import 'Dogum_Gunleri_Screen.dart';
 import 'Ogrenci_Denemeler_Screen.dart';
 import 'package:lottie/lottie.dart';
+import 'istatistik_servisi.dart';
+// İstatistik servisini kullanmak için
 
 class StudentHomeScreen extends StatefulWidget {
   final String studentId;
@@ -152,6 +156,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         dogumGunuKontrolEtVeBildir(context, cId);
       }
     });
+    await IstatistikServisi.islemKaydet(
+      studentId: widget.studentId,
+      islemTuru: 'giris',
+    );
   }
 
   // Öğrencinin Kendi Şifresini Değiştirme Fonksiyonu
@@ -364,8 +372,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(18),
-                    onTap: () {
+                    onTap: () async {
                       if (menuItems[index]['title'] == 'Okuduğum Kitaplar') {
+                        await IstatistikServisi.islemKaydet(
+                          studentId: widget.studentId,
+                          islemTuru:
+                              'okudugum_kitaplar', // İstediğin bir anahtar kelime verebilirsin
+                        );
+
+                        if (!context.mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -375,6 +390,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           ),
                         );
                       } else if (menuItems[index]['title'] == 'Ödevlerim') {
+                        await IstatistikServisi.islemKaydet(
+                          studentId: widget.studentId,
+                          islemTuru: 'odevlerim',
+                        );
+
                         if (classId.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -395,6 +415,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           ),
                         );
                       } else if (menuItems[index]['title'] == 'Çeşitli İşler') {
+                        await IstatistikServisi.islemKaydet(
+                          studentId: widget.studentId,
+                          islemTuru: 'cesitli_isler',
+                        );
+
+                        if (!context.mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -405,6 +431,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           ),
                         );
                       } else if (menuItems[index]['title'] == 'Davranışlarım') {
+                        await IstatistikServisi.islemKaydet(
+                          studentId: widget.studentId,
+                          islemTuru: 'davranislarim',
+                        );
+
+                        if (!context.mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -415,6 +447,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           ),
                         );
                       } else if (menuItems[index]['title'] == 'Denemelerim') {
+                        await IstatistikServisi.islemKaydet(
+                          studentId: widget.studentId,
+                          islemTuru: 'denemelerim',
+                        );
+
+                        if (!context.mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -425,6 +463,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           ),
                         );
                       } else if (menuItems[index]['title'] == 'Oyunlar') {
+                        await IstatistikServisi.islemKaydet(
+                          studentId: widget.studentId,
+                          islemTuru: 'oyunlar',
+                        );
+
+                        if (!context.mounted) return;
                         Navigator.push(
                           context,
                           MaterialPageRoute(

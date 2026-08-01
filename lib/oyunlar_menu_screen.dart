@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'hafiza_oyunu_screen.dart'; // Hafıza oyunu ekranı importu
+import 'hafiza_oyunu_screen.dart';
 import 'es_anlamli_oyunu_screen.dart';
 import 'Zit_Anlamli_Kelime_Sayfasi.dart';
 import 'Toplama_Oyunu_Screen.dart';
 import 'Cikarma_Oyunu_Screen.dart';
+import 'istatistik_servisi.dart'; // 1. Servisi import ettik
 
 class OyunlarMenuScreen extends StatelessWidget {
   final String studentId;
@@ -25,7 +26,7 @@ class OyunlarMenuScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: GridView.count(
-          crossAxisCount: 2, // Yan yana 2 oyun kartı
+          crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
           children: [
@@ -36,7 +37,12 @@ class OyunlarMenuScreen extends StatelessWidget {
               ikon: Icons.psychology,
               renk: Colors.purple.shade50,
               ikonRenk: Colors.purple,
-              onTap: () {
+              onTap: () async {
+                await IstatistikServisi.islemKaydet(
+                  studentId: studentId,
+                  islemTuru: 'oyun_hafiza',
+                );
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -45,13 +51,19 @@ class OyunlarMenuScreen extends StatelessWidget {
                 );
               },
             ),
+            // Eş Anlamlılar Kartı
             _buildOyunKarti(
               context,
               baslik: "Eş Anlamlılar",
               ikon: Icons.menu_book,
               renk: Colors.blue.shade50,
               ikonRenk: Colors.blue,
-              onTap: () {
+              onTap: () async {
+                await IstatistikServisi.islemKaydet(
+                  studentId: studentId,
+                  islemTuru: 'oyun_es_anlamli',
+                );
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -63,13 +75,19 @@ class OyunlarMenuScreen extends StatelessWidget {
                 );
               },
             ),
+            // Zıt Anlamlılar Kartı
             _buildOyunKarti(
               context,
               baslik: "Zıt Anlamlılar",
-              ikon: Icons.swap_horiz, // İsteğe göre ikon değiştirebilirsin
+              ikon: Icons.swap_horiz,
               renk: Colors.green.shade50,
               ikonRenk: Colors.green,
-              onTap: () {
+              onTap: () async {
+                await IstatistikServisi.islemKaydet(
+                  studentId: studentId,
+                  islemTuru: 'oyun_zit_anlamli',
+                );
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -81,13 +99,19 @@ class OyunlarMenuScreen extends StatelessWidget {
                 );
               },
             ),
+            // Toplama Oyunu Kartı
             _buildOyunKarti(
               context,
               baslik: "Toplama Oyunu",
-              ikon: Icons.add_circle, // İsteğe göre ikon değiştirebilirsin
+              ikon: Icons.add_circle,
               renk: Colors.red.shade50,
               ikonRenk: Colors.red,
-              onTap: () {
+              onTap: () async {
+                await IstatistikServisi.islemKaydet(
+                  studentId: studentId,
+                  islemTuru: 'oyun_toplama',
+                );
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -99,13 +123,19 @@ class OyunlarMenuScreen extends StatelessWidget {
                 );
               },
             ),
+            // Çıkarma Oyunu Kartı
             _buildOyunKarti(
               context,
               baslik: "Çıkarma Oyunu",
-              ikon: Icons.remove_circle, // İsteğe göre ikon değiştirebilirsin
+              ikon: Icons.remove_circle,
               renk: Colors.deepOrange.shade50,
               ikonRenk: Colors.deepOrange,
-              onTap: () {
+              onTap: () async {
+                await IstatistikServisi.islemKaydet(
+                  studentId: studentId,
+                  islemTuru: 'oyun_cikarma',
+                );
+                if (!context.mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -117,7 +147,6 @@ class OyunlarMenuScreen extends StatelessWidget {
                 );
               },
             ),
-            // Buraya ileride başka oyunlar ekleyebilirsiniz
           ],
         ),
       ),

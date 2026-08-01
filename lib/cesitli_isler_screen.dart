@@ -6,17 +6,18 @@ import 'package:durugol_cicekleri/Kisisel_Atasozleri_Screen.dart';
 import 'package:durugol_cicekleri/Kisisel_Deyimler_Screen.dart';
 import 'package:durugol_cicekleri/Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart'; // Lottie paketi eklendi
+import 'package:lottie/lottie.dart';
 import 'nobetci_screen.dart';
 import 'Ogrenci_Oturma_Duzeni_Screen.dart';
 import 'Ogrenci_Gorevli_Goruntuleme_Screen.dart';
 import 'Ogrenci_Haftalik_Ders_Programi_Screen.dart';
 import 'Ogrenci_Etkinlikler_Screen.dart';
 import 'Ogrenci_Yarismalar_Screen.dart';
+import 'istatistik_servisi.dart'; // 1. Servisi import ettik[cite: 2]
 
 class OgrenciDevamsizlikScreen extends StatelessWidget {
   final String classId;
-  final String studentId; // Giriş yapan öğrencinin ID'si
+  final String studentId;
 
   const OgrenciDevamsizlikScreen({
     super.key,
@@ -36,10 +37,7 @@ class OgrenciDevamsizlikScreen extends StatelessWidget {
             .collection('classes')
             .doc(classId)
             .collection('devamsizliklar')
-            .orderBy(
-              'tarih',
-              descending: true,
-            ) // Bugünden geçmişe doğru sıralama
+            .orderBy('tarih', descending: true)
             .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -58,7 +56,6 @@ class OgrenciDevamsizlikScreen extends StatelessWidget {
           var devamsizlikDocs = snapshot.data!.docs;
           List<String> gelmedigiTarihler = [];
 
-          // Kayıtları tarayıp bu öğrencinin devamsız olduğu tarihleri ayıklayalım
           for (var doc in devamsizlikDocs) {
             var data = doc.data() as Map<String, dynamic>;
             String tarihStr = data['tarih'] ?? '';
@@ -66,7 +63,6 @@ class OgrenciDevamsizlikScreen extends StatelessWidget {
                 data['ogrenciler'] as Map<String, dynamic>? ?? {};
 
             if (ogrencilerMap[studentId] == true) {
-              // Tarihi GG.AA.YYYY formatına çevirelim
               String formatliTarih = tarihStr;
               try {
                 List<String> parts = tarihStr.split('-');
@@ -81,7 +77,6 @@ class OgrenciDevamsizlikScreen extends StatelessWidget {
 
           return Column(
             children: [
-              // Özet Kartı
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.all(16),
@@ -134,7 +129,6 @@ class OgrenciDevamsizlikScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
                 child: Align(
@@ -145,8 +139,6 @@ class OgrenciDevamsizlikScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // Liste
               Expanded(
                 child: gelmedigiTarihler.isEmpty
                     ? const Center(
@@ -212,7 +204,6 @@ class CesitliIslerScreen extends StatefulWidget {
 }
 
 class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
-  // Menü öğelerini ikon ve renkleriyle birlikte tanımlıyoruz
   final List<Map<String, dynamic>> _menuItems = [
     {
       "title": "Nöbetçi",
@@ -251,7 +242,7 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
     },
   ];
 
-  int _selectedIndex = 0; // Aktif seçili olan butonun indeksini tutar
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -259,19 +250,16 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
       appBar: AppBar(title: const Text("Çeşitli İşler")),
       body: Column(
         children: [
-          // 2 Satırlık, öğretmen panelindekine benzer yatay kaydırılabilir alan
-          // 3 Satırlık, öğretmen panelindekine benzer yatay kaydırılabilir alan
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             color: Colors.indigo.shade50,
             child: SizedBox(
-              height:
-                  245, // 3 satırlık buton yapısının sığması için yükseklik artırıldı
+              height: 245,
               child: GridView.builder(
-                scrollDirection: Axis.horizontal, // Yatay kaydırma
+                scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, // Tam 3 satır yapıldı
+                  crossAxisCount: 3,
                   mainAxisSpacing: 6,
                   crossAxisSpacing: 6,
                   childAspectRatio: 0.72,
@@ -287,122 +275,131 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: InkWell(
-                      onTap: () {
+                      onTap: () async {
+                        // 2. Tıklama anını istatistiğe kaydediyoruz
                         setState(() {
                           _selectedIndex = index;
-
-                          if (title == "Nöbetçi") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => NobetciScreen(
-                                  studentId: widget.studentId,
-                                  classId: widget.classId,
-                                  isTeacher:
-                                      false, // Öğrenci yetkisi (salt okunur)
-                                ),
-                              ),
-                            );
-                          } else if (title == "Oturma Düzeni") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OgrenciOturmaDuzeniScreen(
-                                  classId: widget.classId,
-                                ),
-                              ),
-                            );
-                          } else if (title == "Deyimler") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => KisiselDeyimlerScreen(
-                                  classId: widget.classId,
-                                  isTeacher: false,
-                                ),
-                              ),
-                            );
-                          } else if (title == "Atasözleri") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => KisiselAtasozleriScreen(
-                                  classId: widget.classId,
-                                  isTeacher: false,
-                                ),
-                              ),
-                            );
-                          } else if (title == "Doğum Günleri") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    DogumGunleriScreen(classId: widget.classId),
-                              ),
-                            );
-                          } else if (title == "Devamsızlık") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OgrenciDevamsizlikScreen(
-                                  classId: widget.classId,
-                                  studentId: widget.studentId,
-                                ),
-                              ),
-                            );
-                          } else if (title == "Görevli") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    OgrenciGorevliGoruntulemeScreen(
-                                      classId: widget.classId,
-                                      studentId: widget.studentId,
-                                    ),
-                              ),
-                            );
-                          } else if (title == "Ders Programı") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    OgrenciHaftalikDersProgramiScreen(
-                                      classId: widget.classId,
-                                    ),
-                              ),
-                            );
-                          } else if (title == "Sözlük") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => KisiselSozlukScreen(
-                                  classId: widget.classId,
-                                  isTeacher: false,
-                                ),
-                              ),
-                            );
-                          } else if (title == "Etkinlikler") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OgrenciEtkinliklerScreen(
-                                  classId: widget.classId,
-                                  studentId: widget.studentId,
-                                ),
-                              ),
-                            );
-                          } else if (title == "Yarışmalar") {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OgrenciYarismalarScreen(
-                                  classId: widget.classId,
-                                  studentId: widget.studentId,
-                                ),
-                              ),
-                            );
-                          }
                         });
+
+                        String islemTuruKey =
+                            'cesitli_$title'; // Benzersiz bir key oluşturduk[cite: 2]
+                        await IstatistikServisi.islemKaydet(
+                          studentId: widget.studentId,
+                          islemTuru: islemTuruKey,
+                        );
+
+                        if (!context.mounted) return;
+
+                        if (title == "Nöbetçi") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => NobetciScreen(
+                                studentId: widget.studentId,
+                                classId: widget.classId,
+                                isTeacher: false,
+                              ),
+                            ),
+                          );
+                        } else if (title == "Oturma Düzeni") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OgrenciOturmaDuzeniScreen(
+                                classId: widget.classId,
+                              ),
+                            ),
+                          );
+                        } else if (title == "Deyimler") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => KisiselDeyimlerScreen(
+                                classId: widget.classId,
+                                isTeacher: false,
+                              ),
+                            ),
+                          );
+                        } else if (title == "Atasözleri") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => KisiselAtasozleriScreen(
+                                classId: widget.classId,
+                                isTeacher: false,
+                              ),
+                            ),
+                          );
+                        } else if (title == "Doğum Günleri") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  DogumGunleriScreen(classId: widget.classId),
+                            ),
+                          );
+                        } else if (title == "Devamsızlık") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OgrenciDevamsizlikScreen(
+                                classId: widget.classId,
+                                studentId: widget.studentId,
+                              ),
+                            ),
+                          );
+                        } else if (title == "Görevli") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  OgrenciGorevliGoruntulemeScreen(
+                                    classId: widget.classId,
+                                    studentId: widget.studentId,
+                                  ),
+                            ),
+                          );
+                        } else if (title == "Ders Programı") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  OgrenciHaftalikDersProgramiScreen(
+                                    classId: widget.classId,
+                                  ),
+                            ),
+                          );
+                        } else if (title == "Sözlük") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => KisiselSozlukScreen(
+                                classId: widget.classId,
+                                isTeacher: false,
+                              ),
+                            ),
+                          );
+                        } else if (title == "Etkinlikler") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OgrenciEtkinliklerScreen(
+                                classId: widget.classId,
+                                studentId: widget.studentId,
+                              ),
+                            ),
+                          );
+                        } else if (title == "Yarışmalar") {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OgrenciYarismalarScreen(
+                                classId: widget.classId,
+                                studentId: widget.studentId,
+                              ),
+                            ),
+                          );
+                        }
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -457,8 +454,6 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
             ),
           ),
           const Divider(height: 1),
-
-          // Lottie Animasyonunun Yerleştirildiği Alan
           Expanded(
             child: Container(
               width: double.infinity,
@@ -466,10 +461,7 @@ class _CesitliIslerScreenState extends State<CesitliIslerScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.indigo.shade50, // Üst kısımda hafif bir indigo tonu
-                    Colors.white, // Alt kısma doğru saf beyaza geçiş
-                  ],
+                  colors: [Colors.indigo.shade50, Colors.white],
                 ),
               ),
               child: Center(
