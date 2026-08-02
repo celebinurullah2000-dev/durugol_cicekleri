@@ -13,7 +13,7 @@ import 'Dogum_Gunleri_Screen.dart';
 import 'Ogrenci_Denemeler_Screen.dart';
 import 'package:lottie/lottie.dart';
 import 'istatistik_servisi.dart';
-// İstatistik servisini kullanmak için
+import 'dart:convert';
 
 class StudentHomeScreen extends StatefulWidget {
   final String studentId;
@@ -27,10 +27,51 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   String studentName = "Öğrenci"; // Başlangıç değeri
   String classId = ""; // Sınıf ID'sini tutmak için değişken
 
+  String? ogrenciProfilResmiBase64;
+
   @override
   void initState() {
     super.initState();
     _loadStudentData(); // Hem ismi hem de sınıf ID'sini yüklüyoruz
+  }
+
+  void _resmiTamBoyutGoster() {
+    if (ogrenciProfilResmiBase64 == null || ogrenciProfilResmiBase64!.isEmpty) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(10),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              InteractiveViewer(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    base64Decode(ogrenciProfilResmiBase64!),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 20,
+                right: 20,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void dogumGunuKontrolEtVeBildir(BuildContext context, String classId) async {
@@ -126,12 +167,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   Future<void> _loadStudentData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Önce hafızadan alalım
     String isim = prefs.getString('studentName') ?? "Öğrenci";
     String cId = prefs.getString('classId') ?? "";
 
-    // Eğer hafızada classId yoksa doğrudan Firestore'dan çekelim (Garanti yöntem)
-    if (cId.isEmpty) {
+    // Önce telefonda kayıtlı resim var mı bakalım (Hızlı yükleme)
+    String? yerelResim = prefs.getString(
+      'studentProfileImage_${widget.studentId}',
+    );
+
+    if (cId.isEmpty || yerelResim == null || yerelResim.isEmpty) {
+      // Telefonda yoksa Firestore'dan çekelim
       var studentDoc = await FirebaseFirestore.instance
           .collection('students')
           .doc(widget.studentId)
@@ -141,21 +186,31 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         var data = studentDoc.data() as Map<String, dynamic>;
         cId = data['classId'] ?? "";
         isim = "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}".trim();
+        String dbResim = data['resimBase64'] ?? "";
 
-        // Hafızaya kaydedelim ki bir sonraki seferde hızlı gelsin
         await prefs.setString('classId', cId);
         await prefs.setString('studentName', isim);
+
+        if (dbResim.isNotEmpty) {
+          await prefs.setString(
+            'studentProfileImage_${widget.studentId}',
+            dbResim,
+          );
+          yerelResim = dbResim;
+        }
       }
     }
 
     setState(() {
       studentName = isim.isNotEmpty ? isim : "Öğrenci";
-      classId = cId; // Sınıf ID değişkenimizi dolduruyoruz
+      classId = cId;
+      ogrenciProfilResmiBase64 = yerelResim;
 
       if (cId.isNotEmpty && mounted) {
         dogumGunuKontrolEtVeBildir(context, cId);
       }
     });
+
     await IstatistikServisi.islemKaydet(
       studentId: widget.studentId,
       islemTuru: 'giris',
@@ -300,10 +355,45 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Merhaba, $studentName"),
+        title: Row(
+          children: [
+            GestureDetector(
+              onTap:
+                  _resmiTamBoyutGoster, // <-- Tıklama özelliği buraya eklendi
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: Colors.white,
+                backgroundImage:
+                    (ogrenciProfilResmiBase64 != null &&
+                        ogrenciProfilResmiBase64!.isNotEmpty)
+                    ? MemoryImage(base64Decode(ogrenciProfilResmiBase64!))
+                    : null,
+                child:
+                    (ogrenciProfilResmiBase64 == null ||
+                        ogrenciProfilResmiBase64!.isEmpty)
+                    ? const Icon(Icons.person, color: Colors.indigo)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Merhaba, $studentName",
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.cake, color: Colors.pink, size: 40),
+            icon: const Icon(
+              Icons.cake,
+              color: Color.fromARGB(255, 247, 151, 183),
+              size: 40,
+            ),
             tooltip: "Sınıf Doğum Günleri",
             onPressed: () {
               if (classId.isEmpty) return;
@@ -318,7 +408,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           IconButton(
             icon: const Icon(
               Icons.vpn_key,
-              color: Colors.indigo,
+              color: Colors.lightBlue,
               size: 40,
             ), // Şifre değiştirme ikonu
             tooltip: "Şifremi Değiştir",
