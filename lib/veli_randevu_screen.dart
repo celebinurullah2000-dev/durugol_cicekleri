@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class VeliRandevuScreen extends StatefulWidget {
   final String studentId;
@@ -128,6 +130,44 @@ class _RandevuAlTabState extends State<RandevuAlTab> {
     return saatler;
   }
 
+  // --- BURAYA: Öğretmene bildirim fırlatan fonksiyonu ekliyoruz ---
+  Future<void> _ogretmeneBildirimGonder(String tarih, String saat) async {
+    try {
+      // 1. Öğretmenin FCM token'ını Firestore'daki 'teacher_tokens' koleksiyonundan alıyoruz
+      var doc = await FirebaseFirestore.instance
+          .collection('teacher_tokens')
+          .doc(widget.classId)
+          .get();
+
+      if (!doc.exists) return;
+
+      String? teacherToken = doc.data()?['token'];
+      if (teacherToken == null || teacherToken.isEmpty) return;
+
+      // Not: Firebase Server Key değerini Firebase Console > Project Settings > Cloud Messaging sekmesinden alıp buraya yazmalısın.
+      const String serverKey = 'SENIN_FIREBASE_SERVER_KEY_DEGERI';
+
+      await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$serverKey',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'notification': <String, dynamic>{
+            'title': 'Yeni Randevu Alındı! 📌',
+            'body':
+                '${widget.studentName}, $tarih tarihi saat $saat için randevu aldı.',
+          },
+          'priority': 'high',
+          'to': teacherToken,
+        }),
+      );
+    } catch (e) {
+      debugPrint("Bildirim gönderme hatası: $e");
+    }
+  }
+
   Future<void> _randevuAl(
     String saat,
     Map<String, dynamic> mevcutSlotlar,
@@ -184,6 +224,8 @@ class _RandevuAlTabState extends State<RandevuAlTab> {
                 'durum': 'aktif',
                 'olusturulmaTarihi': FieldValue.serverTimestamp(),
               });
+
+              await _ogretmeneBildirimGonder(tarihKey, saat);
 
               if (!mounted) return;
               setState(() => _isLoading = false);

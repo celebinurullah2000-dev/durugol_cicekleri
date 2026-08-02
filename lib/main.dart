@@ -9,6 +9,7 @@ import 'login_screen.dart';
 // ignore: unused_import
 import 'package:cloud_firestore/cloud_firestore.dart'; // FirebaseFirestore hatası için
 import 'student_home_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,33 @@ void main() async {
   final studentId = prefs.getString('studentId');
 
   runApp(MyApp(initialRole: role, studentId: studentId));
+}
+
+Future<void> bildirimIzinleriniVeTokeniAyarla(String userId) async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // 1. Kullanıcıdan bildirim izni iste (Özellikle iOS ve Android 13+ için şarttır)
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    // 2. Cihazın FCM Token'ını al
+    String? token = await messaging.getToken();
+
+    if (token != null) {
+      // 3. Token'ı Firestore'da ilgili kullanıcının (öğrenci veya öğretmen) altına kaydedelim
+      await FirebaseFirestore.instance
+          .collection('users_tokens')
+          .doc(userId)
+          .set({
+            'token': token,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {

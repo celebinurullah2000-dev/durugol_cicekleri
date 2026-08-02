@@ -24,6 +24,9 @@ import 'Yarismalar_Screen.dart';
 import 'Denemeler_Screen.dart';
 import 'Ogretmen_Davranis_Screen.dart';
 import 'etutler_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:async';
 
 Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   String classId,
@@ -51,6 +54,45 @@ Future<Map<String, dynamic>> ogrenciDevamsizlikRaporunuGetir(
   gelmedigiTarihler.sort();
 
   return {'toplam': toplamDevamsizlik, 'tarihler': gelmedigiTarihler};
+}
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+// Bildirimleri başlatma fonksiyonu (Öğretmen ana sayfasının initState içine yazılabilir)
+void bildirimleriBaslat() async {
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+}
+
+// Bildirim Gösterme Fonksiyonu
+Future<void> bildirimGoster(String baslik, String aciklama) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+        'randevu_kanal_id',
+        'Randevu Bildirimleri',
+        channelDescription: 'Yeni randevu alındığında bilgilendirir',
+        importance: Importance.max,
+        priority: Priority.high,
+        showWhen: true,
+      );
+
+  const NotificationDetails platformChannelSpecifics = NotificationDetails(
+    android: androidPlatformChannelSpecifics,
+  );
+
+  await flutterLocalNotificationsPlugin.show(
+    0,
+    baslik,
+    aciklama,
+    platformChannelSpecifics,
+  );
 }
 
 class OgretmenAnaSayfasi extends StatefulWidget {
@@ -155,14 +197,86 @@ void _dogumGunuDialogGoster(
 }
 
 class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
+  StreamSubscription<QuerySnapshot>? _randevuSubscription;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       dogumGunuKontrolEtVeBildir(context, widget.classId);
+
+      // Bildirim token kaydetme fonksiyonunu burada ÇALIŞTIRIYORUZ (çağırıyoruz)
+      ogretmenBildirimTokeniniKaydet(widget.classId);
     });
+    bildirimleriBaslat();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      dogumGunuKontrolEtVeBildir(context, widget.classId);
+      ogretmenBildirimTokeniniKaydet(widget.classId);
+    });
+
+    // --- YENİ: Randevuları dinleyip anlık bildirim fırlatan mekanizma ---
+    _randevuDinle();
   }
 
+  void _randevuDinle() {
+    // Sadece bu sınıfa ait randevuları dinliyoruz
+    // Not: İlk açılıştaki mevcut eski randevuların bildirim patlatmaması için
+    // sonradan eklenenleri yakalayabiliriz veya anlık dinleme yapabiliriz.
+    _randevuSubscription = FirebaseFirestore.instance
+        .collection('randevular')
+        .where('classId', isEqualTo: widget.classId)
+        .where('durum', isEqualTo: 'aktif')
+        .snapshots()
+        .listen((snapshot) {
+          for (var change in snapshot.docChanges) {
+            // Sadece yeni eklenen (added) randevuları yakala ki uygulama açılınca eskiler bildirim olmasın
+            if (change.type == DocumentChangeType.added) {
+              var data = change.doc.data() as Map<String, dynamic>;
+              String ogrenciAdi = data['ogrenciAdi'] ?? 'Bir öğrenci';
+              String tarih = data['tarih'] ?? '';
+              String saat = data['saat'] ?? '';
+
+              // Yerel bildirimi tetikle
+              bildirimGoster(
+                "Yeni Randevu Alındı! 📌",
+                "$ogrenciAdi, $tarih tarihinde saat $saat için randevu aldı.",
+              );
+            }
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    // Sayfa kapandığında dinlemeyi sonlandırıyoruz (bellek sızıntısını önlemek için)
+    _randevuSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> ogretmenBildirimTokeniniKaydet(String classId) async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    // Bildirim izni iste
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      String? token = await messaging.getToken();
+      if (token != null) {
+        // Öğretmenin token'ını sınıfa göre kaydedelim
+        await FirebaseFirestore.instance
+            .collection('teacher_tokens')
+            .doc(classId)
+            .set({
+              'token': token,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+      }
+    }
+  }
   /* Future<void> topluDogumTarihiYukle() async {
     // Gönderdiğiniz listedeki ad-soyad ve doğum tarihi verileri
     final Map<String, String> dogumListesi = {
@@ -1185,29 +1299,5 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
         ),
       ),
     );
-  }
-
-  int dogumGununeKalanGunHesapla(String dogumTarihiStr) {
-    try {
-      List<String> parcalar = dogumTarihiStr.split('.');
-      if (parcalar.length != 3) return 999;
-      int gun = int.parse(parcalar[0]);
-      int ay = int.parse(parcalar[1]);
-
-      DateTime simdi = DateTime.now();
-      DateTime buYilDogumGunu = DateTime(simdi.year, ay, gun);
-
-      if (buYilDogumGunu.isBefore(
-        DateTime(simdi.year, simdi.month, simdi.day),
-      )) {
-        buYilDogumGunu = DateTime(simdi.year + 1, ay, gun);
-      }
-
-      return buYilDogumGunu
-          .difference(DateTime(simdi.year, simdi.month, simdi.day))
-          .inDays;
-    } catch (e) {
-      return 999;
-    }
   }
 }
