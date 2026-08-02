@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:durugol_cicekleri/istatistik_servisi.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,6 +26,11 @@ class _OdevlerimScreenState extends State<OdevlerimScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    // Ekran ilk açıldığında varsayılan olarak 0. sekme (Ödevlerim) açık gelir
+    // Bu yüzden direkt kitap ödevlerini okundu olarak işaretliyoruz ki rozet anında düşsün.
+    _kitapOdevleriniOkunduIsaretle();
+
     _tabController.addListener(() {
       // Sekme değişimi tamamlandığında (animasyon bittiğinde) çalışması için:
       if (!_tabController.indexIsChanging) {
@@ -33,12 +40,15 @@ class _OdevlerimScreenState extends State<OdevlerimScreen>
             studentId: widget.studentId,
             islemTuru: 'odevlerim_sekmesi',
           );
+          _kitapOdevleriniOkunduIsaretle();
         } else if (_tabController.index == 1) {
           // 1. Sekme: Görevlerim
           IstatistikServisi.islemKaydet(
             studentId: widget.studentId,
             islemTuru: 'gorevlerim_sekmesi',
           );
+          // Sadece bu sekmeye tıklandığında görevleri okundu yapıyoruz
+          _sinifIsleriniOkunduIsaretle();
         }
       }
     });
@@ -48,6 +58,64 @@ class _OdevlerimScreenState extends State<OdevlerimScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  // Kitap ödevlerini okundu olarak işaretleyen fonksiyon
+  Future<void> _kitapOdevleriniOkunduIsaretle() async {
+    try {
+      var odevlerSnapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .doc(widget.studentId)
+          .collection('odevler')
+          .get();
+
+      for (var doc in odevlerSnapshot.docs) {
+        var data = doc.data();
+        if (data['okundu'] != true) {
+          await doc.reference.update({'okundu': true});
+        }
+      }
+      if (mounted) setState(() {});
+    } catch (e) {
+      print("Kitap ödevleri okundu işaretleme hatası: $e");
+    }
+  }
+
+  // Sınıf işleri açıldığında okunmamışları okundu olarak işaretleyen fonksiyon
+  Future<void> _sinifIsleriniOkunduIsaretle() async {
+    try {
+      var sinifIsleriSnapshot = await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(widget.classId)
+          .collection('sinif_isleri')
+          .get();
+
+      for (var doc in sinifIsleriSnapshot.docs) {
+        String isId = doc.id;
+        var veriRef = FirebaseFirestore.instance
+            .collection('students')
+            .doc(widget.studentId)
+            .collection('is_verileri')
+            .doc(isId);
+
+        var veriSnap = await veriRef.get();
+        if (!veriSnap.exists) {
+          // Eğer hiç veri yoksa varsayılan değerle oluşturup okundu yapalım
+          await veriRef.set({
+            'deger': '-',
+            'okundu': true,
+          }, SetOptions(merge: true));
+        } else {
+          var data = veriSnap.data() as Map<String, dynamic>;
+          if (data['okundu'] != true) {
+            await veriRef.update({'okundu': true});
+          }
+        }
+      }
+      if (mounted) setState(() {});
+    } catch (e) {
+      print("Sınıf işleri okundu işaretleme hatası: $e");
+    }
   }
 
   // Tekil ödev kitabının durumunu güncelleme fonksiyonu
@@ -96,9 +164,123 @@ class _OdevlerimScreenState extends State<OdevlerimScreen>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: "Ödevlerim", icon: Icon(Icons.book, size: 20)),
-            Tab(text: "Görevlerim", icon: Icon(Icons.assignment, size: 20)),
+          tabs: [
+            // 1. SEKME: Ödevlerim (Dinamik Rozetli)
+            Tab(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('students')
+                    .doc(widget.studentId)
+                    .collection('odevler')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  int okunmamisOdevSayisi = 0;
+                  if (snapshot.hasData) {
+                    for (var doc in snapshot.data!.docs) {
+                      var data = doc.data() as Map<String, dynamic>;
+                      if (data['okundu'] != true) {
+                        okunmamisOdevSayisi++;
+                      }
+                    }
+                  }
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.book, size: 20),
+                      const SizedBox(width: 8),
+                      const Text("Ödevlerim"),
+                      if (okunmamisOdevSayisi > 0) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            "$okunmamisOdevSayisi",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ),
+            // 2. SEKME: Görevlerim (Dinamik Rozetli)
+            Tab(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('classes')
+                    .doc(widget.classId)
+                    .collection('sinif_isleri')
+                    .snapshots(),
+                builder: (context, sinifIsleriSnap) {
+                  return StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('students')
+                        .doc(widget.studentId)
+                        .collection('is_verileri')
+                        .snapshots(),
+                    builder: (context, ogrenciVeriSnap) {
+                      int okunmamisSayisi = 0;
+
+                      if (sinifIsleriSnap.hasData && ogrenciVeriSnap.hasData) {
+                        var tumIsler = sinifIsleriSnap.data!.docs;
+                        var ogrenciVerileri = {
+                          for (var d in ogrenciVeriSnap.data!.docs)
+                            d.id: d.data(),
+                        };
+
+                        for (var isDoc in tumIsler) {
+                          String isId = isDoc.id;
+                          var veri =
+                              ogrenciVerileri[isId] as Map<String, dynamic>?;
+
+                          // Eğer öğrenci bu iş için kayıt açmamışsa veya okundu alanı true değilse okunmamış say
+                          if (veri == null || veri['okundu'] != true) {
+                            okunmamisSayisi++;
+                          }
+                        }
+                      }
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.assignment, size: 20),
+                          const SizedBox(width: 8),
+                          const Text("Görevlerim"),
+                          if (okunmamisSayisi > 0) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                "$okunmamisSayisi",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -115,7 +297,7 @@ class _OdevlerimScreenState extends State<OdevlerimScreen>
     );
   }
 
-  // 1. Sekme İçeriği (Eski Kitap Ödevleriniz)
+  // 1. Sekme İçeriği (Kitap Ödevleriniz)
   Widget _buildKitapOdevleriView() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -390,7 +572,6 @@ class _OdevlerimScreenState extends State<OdevlerimScreen>
                       isAdi,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    // subtitle: Text("Tür: ${veriTuru.toUpperCase()}"), (Bu satırı sildim)
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,

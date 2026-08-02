@@ -364,160 +364,251 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 childAspectRatio: 1.5,
               ),
               itemBuilder: (context, index) {
+                String baslik = menuItems[index]['title']!;
+                bool isOdevlerim = baslik == 'Ödevlerim';
+
+                // Eğer "Ödevlerim" kartı ise toplam okunmamış bildirim sayısını hesaplayalım
+                Widget kartIcerigi = InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () async {
+                    // Tıklama aksiyonları aynı kalıyor...
+                    if (baslik == 'Okuduğum Kitaplar') {
+                      await IstatistikServisi.islemKaydet(
+                        studentId: widget.studentId,
+                        islemTuru: 'okudugum_kitaplar',
+                      );
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OkudugumKitaplarScreen(
+                            studentId: widget.studentId,
+                          ),
+                        ),
+                      );
+                    } else if (baslik == 'Ödevlerim') {
+                      await IstatistikServisi.islemKaydet(
+                        studentId: widget.studentId,
+                        islemTuru: 'odevlerim',
+                      );
+
+                      if (classId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Sınıf bilgisi yükleniyor, lütfen tekrar deneyin.",
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OdevlerimScreen(
+                            studentId: widget.studentId,
+                            classId: classId,
+                          ),
+                        ),
+                      );
+                    } else if (baslik == 'Çeşitli İşler') {
+                      await IstatistikServisi.islemKaydet(
+                        studentId: widget.studentId,
+                        islemTuru: 'cesitli_isler',
+                      );
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CesitliIslerScreen(
+                            studentId: widget.studentId,
+                            classId: classId,
+                          ),
+                        ),
+                      );
+                    } else if (baslik == 'Davranışlarım') {
+                      await IstatistikServisi.islemKaydet(
+                        studentId: widget.studentId,
+                        islemTuru: 'davranislarim',
+                      );
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OgrenciDavranisScreen(
+                            studentId: widget.studentId,
+                            classId: classId,
+                          ),
+                        ),
+                      );
+                    } else if (baslik == 'Denemelerim') {
+                      await IstatistikServisi.islemKaydet(
+                        studentId: widget.studentId,
+                        islemTuru: 'denemelerim',
+                      );
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OgrenciDenemelerScreen(
+                            studentId: widget.studentId,
+                            classId: classId,
+                          ),
+                        ),
+                      );
+                    } else if (baslik == 'Oyunlar') {
+                      await IstatistikServisi.islemKaydet(
+                        studentId: widget.studentId,
+                        islemTuru: 'oyunlar',
+                      );
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OyunlarMenuScreen(
+                            studentId: widget.studentId,
+                            classId: classId,
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("$baslik bölümü yapım aşamasında!"),
+                        ),
+                      );
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 15.0),
+                            child: Image.asset(
+                              menuItems[index]['image']!,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 15.0),
+                          child: Text(
+                            baslik,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+
                 return Card(
                   elevation: 2,
                   shadowColor: Colors.indigo.withValues(alpha: 0.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: () async {
-                      if (menuItems[index]['title'] == 'Okuduğum Kitaplar') {
-                        await IstatistikServisi.islemKaydet(
-                          studentId: widget.studentId,
-                          islemTuru:
-                              'okudugum_kitaplar', // İstediğin bir anahtar kelime verebilirsin
-                        );
+                  child: isOdevlerim && classId.isNotEmpty
+                      ? StreamBuilder<QuerySnapshot>(
+                          // 1. Kitap ödevlerini dinle
+                          stream: FirebaseFirestore.instance
+                              .collection('students')
+                              .doc(widget.studentId)
+                              .collection('odevler')
+                              .snapshots(),
+                          builder: (context, odevSnap) {
+                            return StreamBuilder<QuerySnapshot>(
+                              // 2. Sınıf işlerini dinle
+                              stream: FirebaseFirestore.instance
+                                  .collection('classes')
+                                  .doc(classId)
+                                  .collection('sinif_isleri')
+                                  .snapshots(),
+                              builder: (context, sinifIsleriSnap) {
+                                return StreamBuilder<QuerySnapshot>(
+                                  // 3. Öğrencinin sınıf işi verilerini dinle
+                                  stream: FirebaseFirestore.instance
+                                      .collection('students')
+                                      .doc(widget.studentId)
+                                      .collection('is_verileri')
+                                      .snapshots(),
+                                  builder: (context, ogrenciVeriSnap) {
+                                    int toplamBildirim = 0;
 
-                        if (!context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OkudugumKitaplarScreen(
-                              studentId: widget.studentId,
-                            ),
-                          ),
-                        );
-                      } else if (menuItems[index]['title'] == 'Ödevlerim') {
-                        await IstatistikServisi.islemKaydet(
-                          studentId: widget.studentId,
-                          islemTuru: 'odevlerim',
-                        );
+                                    // Kitap ödevleri okunmamış sayısı (Ödevlerim butona tıklanınca okundu olacağı için anında 0'a düşer)
+                                    if (odevSnap.hasData) {
+                                      for (var doc in odevSnap.data!.docs) {
+                                        var data =
+                                            doc.data() as Map<String, dynamic>;
+                                        // Eğer 'okundu' alanı true DEĞİLSE (false veya null ise) okunmamıştır
+                                        if (data['okundu'] != true) {
+                                          toplamBildirim++;
+                                        }
+                                      }
+                                    }
 
-                        if (classId.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Sınıf bilgisi yükleniyor, lütfen tekrar deneyin.",
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OdevlerimScreen(
-                              studentId: widget.studentId,
-                              classId: classId,
-                            ),
-                          ),
-                        );
-                      } else if (menuItems[index]['title'] == 'Çeşitli İşler') {
-                        await IstatistikServisi.islemKaydet(
-                          studentId: widget.studentId,
-                          islemTuru: 'cesitli_isler',
-                        );
+                                    // Sınıf işleri (görevler) okunmamış sayısı (Sadece Görevlerim sekmesine tıklanana kadar saymaya devam eder)
+                                    if (sinifIsleriSnap.hasData &&
+                                        ogrenciVeriSnap.hasData) {
+                                      var tumIsler = sinifIsleriSnap.data!.docs;
+                                      var ogrenciVerileri = {
+                                        for (var d
+                                            in ogrenciVeriSnap.data!.docs)
+                                          d.id: d.data(),
+                                      };
 
-                        if (!context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CesitliIslerScreen(
-                              studentId: widget.studentId,
-                              classId: classId,
-                            ),
-                          ),
-                        );
-                      } else if (menuItems[index]['title'] == 'Davranışlarım') {
-                        await IstatistikServisi.islemKaydet(
-                          studentId: widget.studentId,
-                          islemTuru: 'davranislarim',
-                        );
+                                      for (var isDoc in tumIsler) {
+                                        String isId = isDoc.id;
+                                        var veri =
+                                            ogrenciVerileri[isId]
+                                                as Map<String, dynamic>?;
+                                        if (veri == null ||
+                                            veri['okundu'] == false) {
+                                          toplamBildirim++;
+                                        }
+                                      }
+                                    }
 
-                        if (!context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OgrenciDavranisScreen(
-                              studentId: widget.studentId,
-                              classId: classId,
-                            ),
-                          ),
-                        );
-                      } else if (menuItems[index]['title'] == 'Denemelerim') {
-                        await IstatistikServisi.islemKaydet(
-                          studentId: widget.studentId,
-                          islemTuru: 'denemelerim',
-                        );
-
-                        if (!context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OgrenciDenemelerScreen(
-                              studentId: widget.studentId,
-                              classId: classId,
-                            ),
-                          ),
-                        );
-                      } else if (menuItems[index]['title'] == 'Oyunlar') {
-                        await IstatistikServisi.islemKaydet(
-                          studentId: widget.studentId,
-                          islemTuru: 'oyunlar',
-                        );
-
-                        if (!context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OyunlarMenuScreen(
-                              studentId: widget.studentId,
-                              classId: classId,
-                            ),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "${menuItems[index]['title']} bölümü yapım aşamasında!",
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 15.0),
-                              child: Image.asset(
-                                menuItems[index]['image']!,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 15.0),
-                            child: Text(
-                              menuItems[index]['title']!,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                                    return Stack(
+                                      children: [
+                                        Positioned.fill(child: kartIcerigi),
+                                        if (toplamBildirim > 0)
+                                          Positioned(
+                                            top: 8,
+                                            right: 8,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(7),
+                                              decoration: const BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                "$toplamBildirim",
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        )
+                      : kartIcerigi,
                 );
               },
             ),

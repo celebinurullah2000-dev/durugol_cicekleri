@@ -1,5 +1,6 @@
 import 'package:durugol_cicekleri/Etkinlikler_Screen.dart';
 import 'package:durugol_cicekleri/Sinif_Istatistik_Siralama_Screen.dart';
+import 'package:durugol_cicekleri/sinif_sifreleri_screen.dart';
 import 'Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -989,6 +990,22 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                                   SinifIstatistikSiralamaScreen(
                                     classId: widget.classId,
                                   ),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.auto_stories,
+                        label: "Sınıf Şifreleri",
+                        color: Colors.purpleAccent,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SinifSifreleriScreen(
+                                classId: widget.classId,
+                                className: widget.className,
+                              ),
                             ),
                           );
                         },

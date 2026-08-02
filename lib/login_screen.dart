@@ -264,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 1. Fonksiyonun kullanılmadığı uyarısını çözmek için bunu bir butonun on onPressed'ına bağlayacağız
   Future<void> _login(BuildContext context) async {
-    final password = _passwordController.text;
+    final password = _passwordController.text.trim(); // Boşlukları temizle
     final prefs = await SharedPreferences.getInstance();
     if (!context.mounted) return;
 
@@ -278,41 +278,53 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // 2. ÖĞRENCİ GİRİŞİ (Firestore'da şifre ara)
-    final studentSnapshot = await FirebaseFirestore.instance
-        .collection('students') // Öğrencilerin kayıtlı olduğu koleksiyon
-        .where('password', isEqualTo: password)
-        .get();
+    // 2. ÖĞRENCİ GİRİŞİ (Tüm öğrencileri çekip güvenli filtreleme)
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('students')
+          .get();
 
-    if (studentSnapshot.docs.isNotEmpty) {
-      var studentDoc =
-          studentSnapshot.docs.first; // Dokümanın tamamını alıyoruz
-      var studentData = studentDoc.data();
+      QueryDocumentSnapshot<Map<String, dynamic>>? matchedDoc;
+      for (var doc in querySnapshot.docs) {
+        var data = doc.data();
+        String dbPassword = (data['password'] ?? '').toString().trim();
 
-      await prefs.setString('userRole', 'student');
-      await prefs.setString(
-        'studentId',
-        studentDoc.id,
-      ); // ID'yi SharedPreferences'a kaydediyoruz
-      await prefs.setString(
-        'studentName',
-        "${studentData['firstName']} ${studentData['lastName']}",
-      );
+        if (dbPassword == password) {
+          matchedDoc = doc;
+          break;
+        }
+      }
 
+      if (matchedDoc != null) {
+        var studentData = matchedDoc.data();
+
+        await prefs.setString('userRole', 'student');
+        await prefs.setString('studentId', matchedDoc.id);
+        await prefs.setString(
+          'studentName',
+          "${studentData['firstName'] ?? ''} ${studentData['lastName'] ?? ''}"
+              .trim(),
+        );
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StudentHomeScreen(studentId: matchedDoc!.id),
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Hatalı Şifre!")));
+      }
+    } catch (e) {
       if (!mounted) return;
-
-      // Navigator.pushReplacement kısmını güncelledik:
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              StudentHomeScreen(studentId: studentDoc.id), // ID'yi gönderiyoruz
-        ),
-      );
-    } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Hatalı Şifre!")));
+      ).showSnackBar(SnackBar(content: Text("Giriş hatası: $e")));
     }
   }
 }
