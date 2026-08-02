@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:durugol_cicekleri/Ogrenci_Davranis_Screen.dart';
+import 'package:durugol_cicekleri/veli_randevu_screen.dart';
 import 'package:flutter/material.dart'; // Scaffold, AppBar, Text vb. temel widgetlar için
 import 'package:shared_preferences/shared_preferences.dart'; // Çıkış yaparken oturumu silmek için
 import 'login_screen.dart'; // Çıkış yapınca tekrar giriş ekranına dönmek için
@@ -351,6 +352,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       /*{'title': 'Kurslarım', 'image': 'assets/images/kurslarim.png'},*/
       {'title': 'Çeşitli İşler', 'image': 'assets/images/cesitli_isler.png'},
       {'title': 'Oyunlar', 'image': 'assets/images/oyunlar.png'},
+      {'title': 'Randevular', 'image': 'assets/images/randevular.png'},
     ];
 
     return Scaffold(
@@ -558,6 +560,22 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           builder: (context) => OyunlarMenuScreen(
                             studentId: widget.studentId,
                             classId: classId,
+                          ),
+                        ),
+                      );
+                    } else if (baslik == 'Randevular') {
+                      await IstatistikServisi.islemKaydet(
+                        studentId: widget.studentId,
+                        islemTuru: 'randevular',
+                      );
+                      if (!context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VeliRandevuScreen(
+                            studentId: widget.studentId,
+                            classId: classId,
+                            studentName: studentName,
                           ),
                         ),
                       );

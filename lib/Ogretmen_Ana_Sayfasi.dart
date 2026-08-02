@@ -1,5 +1,6 @@
 import 'package:durugol_cicekleri/Etkinlikler_Screen.dart';
 import 'package:durugol_cicekleri/Sinif_Istatistik_Siralama_Screen.dart';
+import 'package:durugol_cicekleri/ogretmen_randevu_screen.dart';
 import 'package:durugol_cicekleri/sinif_sifreleri_screen.dart';
 import 'Kisisel_Sozluk_Screen.dart';
 import 'package:flutter/material.dart';
@@ -874,6 +875,21 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                           );
                         },
                       ),
+                      _buildHizliIslemButonu(
+                        icon: Icons.access_time,
+                        label: "Randevular",
+                        color: Colors.orange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OgretmenRandevuScreen(
+                                classId: widget.classId,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
 
@@ -949,7 +965,7 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                       _buildHizliIslemButonu(
                         icon: Icons.auto_stories,
                         label: "Davranışlar",
-                        color: Colors.pinkAccent,
+                        color: const Color.fromARGB(255, 139, 175, 238),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -981,7 +997,7 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                       _buildHizliIslemButonu(
                         icon: Icons.auto_stories,
                         label: "Kullanım İstatistikleri",
-                        color: Colors.purpleAccent,
+                        color: Colors.yellow.shade700,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -997,7 +1013,7 @@ class _OgretmenAnaSayfasiState extends State<OgretmenAnaSayfasi> {
                       _buildHizliIslemButonu(
                         icon: Icons.auto_stories,
                         label: "Sınıf Şifreleri",
-                        color: Colors.purpleAccent,
+                        color: const Color.fromARGB(255, 69, 9, 80),
                         onTap: () {
                           Navigator.push(
                             context,

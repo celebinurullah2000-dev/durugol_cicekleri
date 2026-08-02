@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart'; // flutterfire configure ile oluşan dosya
 import 'firestore_service.dart'; // FirestoreService sınıfınızın olduğu dosya
 import 'sinif_sec_ekle_screen.dart'; // Sınıf Listesi ekranınız
@@ -11,6 +12,8 @@ import 'student_home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Türkçe tarih formatının düzgün çalışması için bunu başlatıyoruz
+  await initializeDateFormatting('tr_TR', "");
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
